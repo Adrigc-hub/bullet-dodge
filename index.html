@@ -2,90 +2,154 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Slo-Mo VR Cyber-Chaser</title>
-    <!-- Motores principales de VR -->
+    <title>Slo-Mo VR Cyber-Chaser v2</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     
-    <!-- Modulos del juego organizados -->
     <script src="textures.js"></script>
     <script src="game-logic.js"></script>
     <script src="combat.js"></script>
+
+    <!-- ESTILOS DE LA PANTALLA DE CARGA -->
+    <style>
+      #loading-screen {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #050211;
+        z-index: 9999; display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        color: #00ffcc; font-family: sans-serif;
+        transition: opacity 0.5s ease;
+      }
+      .spinner {
+        border: 4px solid rgba(0,255,220,0.1);
+        width: 60px; height: 60px;
+        border-left-color: #00ffcc; border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
 
-    <a-scene game-mode-manager webxr="optionalFeatures: hit-test, local-floor, passthrough">
+    <!-- Pantalla de Carga Inicial HTML -->
+    <div id="loading-screen">
+      <div class="spinner"></div>
+      <h2>GENERANDO TEXTURAS Y CÓDIGO VR...</h2>
+      <p style="color: #666;">Listo en unos segundos</p>
+    </div>
+
+    <a-scene menu-system control-fix webxr="optionalFeatures: hit-test, local-floor, passthrough">
       
       <a-assets>
-        <!-- Las texturas se inyectan dinámicamente aquí mediante JS -->
         <img id="grid-tex">
         <img id="cyber-tex">
         <img id="enemy-tex">
       </a-assets>
 
-      <!-- Iluminación reactiva -->
       <a-entity id="ambient-light" type="ambient" light="color: #fff; intensity: 0.6"></a-entity>
       <a-entity type="directional" light="intensity: 0.8" position="2 4 3"></a-entity>
 
-      <!-- MODO 1: MAPA VIRTUAL (Desaparece automáticamente en modo Passthrough AR) -->
-      <a-entity id="virtual-map">
-        <a-plane position="0 0 0" rotation="-90 0 0" width="50" height="50" material="src: #grid-tex; repeat: 25 25"></a-plane>
-        <!-- Obstáculos fijos del mapa -->
-        <a-box position="-2 1 -5" material="src: #cyber-tex" animation="property: position; to: -2 1.5 -5; dir: alternate; loop: true; dur: 2000"></a-box>
-        <a-box position="3 0.5 -8" material="src: #cyber-tex"></a-box>
-        <a-box position="0 2 -12" width="6" height="0.5" depth="1" material="src: #cyber-tex"></a-box> 
+      <!-- ================= MENÚ PRINCIPAL 3D ================= -->
+      <a-entity id="main-menu" position="0 1.5 -3">
+        <!-- Título -->
+        <a-entity text="value: CYBER CHASER VR; color: #ff0055; align: center; width: 5" position="0 0.8 0"></a-entity>
+        
+        <!-- Botón Jugar (Se activa al mirarlo o hacer clic) -->
+        <a-box id="start-button" position="0 0 0" scale="1 0.4 0.1" color="#00ffcc"
+               animation__hover="property: scale; to: 1.1 0.45 0.1; startEvents: mouseenter; dur: 200"
+               animation__leave="property: scale; to: 1 0.4 0.1; startEvents: mouseleave; dur: 200">
+          <a-entity text="value: INICIAR JUEGO; color: #000; align: center; width: 3.5" position="0 0 0.6"></a-entity>
+        </a-box>
+
+        <!-- Instrucciones -->
+        <a-entity text="value: Mira fijamente el boton o interactua para empezar.\n¡Agarra la pistola de al lado!; color: #fff; align: center; width: 2.5" position="0 -0.5 0"></a-entity>
+
+        <!-- PISTOLA EN EL MENÚ PARA AGARRAR -->
+        <a-entity id="menu-gun" equippable-gun position="1 -0.2 0" rotation="0 -40 0"
+                  animation="property: rotation; to: 0 320 0; loop: true; dur: 6000; easing: linear">
+          <a-box scale="0.05 0.08 0.3" color="#ff0055">
+            <a-box position="0 0.04 0.1" scale="1 1.5 0.4" color="#222"></a-box>
+          </a-box>
+          <a-entity text="value: ¡AGÁRRAME!; color: #00ffcc; align: center; width: 2" position="0 0.2 0"></a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- ================= ELEMENTOS DEL JUEGO (OCULTOS AL INICIO) ================= -->
+      <a-entity id="game-elements" visible="false">
+        <a-entity id="virtual-map">
+          <a-plane position="0 0 0" rotation="-90 0 0" width="50" height="50" material="src: #grid-tex; repeat: 25 25"></a-plane>
+          <!-- Obstáculos interactivos -->
+          <a-box position="-2 1 -5" material="src: #cyber-tex" animation="property: position; to: -2 1.8 -5; dir: alternate; loop: true; dur: 2500"></a-box>
+          <a-box position="3 0.5 -8" material="src: #cyber-tex"></a-box>
+          <a-box position="0 2.2 -12" width="6" height="0.5" depth="1" material="src: #cyber-tex"></a-box> 
+        </a-entity>
       </a-entity>
       
-      <a-sky id="sky-box" color="#050211"></a-sky>
+      <a-sky id="sky-box" color="#03010a"></a-sky>
 
-      <!-- JUGADOR / CÁMARA Y CONTROLES -->
-      <a-entity id="rig" movement-controls="controls: checkpoint, gamepad; speed: 0.15">
-        <!-- Cabeza / Detección física -->
-        <a-entity camera position="0 1.6 0" look-controls real-jump-detector>
-          <a-cursor visible="false"></a-cursor>
-        </a-entity>
-
-        <!-- Mano Izquierda: Movimiento Joystick e interfaz -->
-        <a-entity oculus-touch-controls="hand: left" time-controller></a-entity>
+      <!-- ================= JUGADOR, CÁMARA Y CONTROLES MIXTOS ================= -->
+      <a-entity id="rig" movement-controls="controls: checkpoint, gamepad, keyboard; speed: 0.15">
         
-        <!-- Mano Derecha: Armas, Disparos y Golpes directos -->
-        <a-entity oculus-touch-controls="hand: right" vr-weapon fist-melee>
-          <!-- Modelo visual de la pistola generada por código -->
-          <a-box position="0 0 -0.15" scale="0.05 0.08 0.3" color="#333">
-            <a-box position="0 0.04 0.1" scale="1 1.5 0.4" color="#111"></a-box>
-            <a-cyan-laser class="laser-pointer" position="0 0 -0.2"></a-cyan-laser>
-          </a-box>
-        </a-entity>
-      </a-scene>
+        <!-- Cabeza / Cámara con cursor para NO CONTROLES (Mirada híbrida) -->
+        <a-entity camera position="0 1.6 0" look-controls real-jump-detector vr-weapon>
+          <!-- Este cursor permite que si estás en cel sin mandos, dispares o uses menús mirando un punto -->
+          <a-cursor id="fuse-cursor" 
+                    position="0 0 -1" 
+                    geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.025" 
+                    material="color: #00ffcc; shader: flat"
+                    raycaster="objects: #start-button, #menu-gun, [enemy-behavior]">
+          </a-cursor>
 
-      <!-- ENEMIGO DE PRUEBA -->
-      <a-entity id="enemy-target" enemy-behavior position="0 1.2 -6" geometry="primitive: cylinder; radius: 0.4; height: 1.5" material="src: #enemy-tex">
-        <a-box position="0 0.5 -0.3" scale="0.2 0.2 0.2" color="#000"></a-box> <!-- Ojo -->
+          <!-- Visualización de la Pistola acoplada a la vista (Se activa al recogerla del menú) -->
+          <a-entity id="player-weapon-visual" position="0.2 -0.25 -0.4" rotation="0 180 0" visible="false">
+            <a-box scale="0.04 0.06 0.25" color="#00ffcc">
+              <a-box position="0 0.04 0.08" scale="1 1.4 0.4" color="#111"></a-box>
+            </a-box>
+          </a-entity>
+        </a-entity>
+
+        <!-- Soporte para Mandos de RV Físicos (Si se detectan, se usan) -->
+        <a-entity oculus-touch-controls="hand: left"></a-entity>
+        <a-entity oculus-touch-controls="hand: right" vr-weapon fist-melee></a-entity>
+      </a-entity>
+
+      <!-- ENEMIGO DINÁMICO -->
+      <a-entity id="enemy-target" enemy-behavior position="0 -5 -6" geometry="primitive: cylinder; radius: 0.4; height: 1.5" material="src: #enemy-tex">
+        <a-box position="0 0.5 -0.3" scale="0.2 0.2 0.2" color="#000"></a-box>
       </a-entity>
 
     </a-scene>
 
     <script>
-      // Ejecución e inyección automática de las texturas procedurales al iniciar
+      // Desactivar la pantalla de carga cuando todo el entorno 3D esté listo
+      document.querySelector('a-scene').addEventListener('loaded', () => {
+        const loader = document.getElementById('loading-screen');
+        loader.style.opacity = '0';
+        setTimeout(() => { loader.style.display = 'none'; }, 500);
+      });
+
       document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById('grid-tex').src = Textures.createGrid('#1a153a', '#00ffcc');
+        document.getElementById('grid-tex').src = Textures.createGrid('#14102e', '#00ffcc');
         document.getElementById('cyber-tex').src = Textures.createCyber();
         document.getElementById('enemy-tex').src = Textures.createEnemyPattern();
       });
 
-      // Lógica de comportamiento de los enemigos respecto al tiempo lento
       AFRAME.registerComponent('enemy-behavior', {
         init: function () {
+          this.el.addEventListener('spawn', () => {
+            this.el.setAttribute('position', '0 1.2 -6');
+          });
           this.el.addEventListener('destroy-enemy', () => {
             this.el.setAttribute('animation', 'property: scale; to: 0 0 0; dur: 200');
-            setTimeout(() => { this.el.parentNode.removeChild(this.el); }, 200);
           });
         },
         tick: function (time, timeDelta) {
-          // El enemigo oscila de izquierda a derecha adaptando su velocidad al tiempo ralentizado
+          if(!window.gameState.gameStarted) return;
           if(!this.currentX) this.currentX = 0;
           this.currentX += 0.002 * timeDelta * window.gameState.timeScale;
-          this.el.object3D.position.x = Math.sin(this.currentX) * 2;
+          this.el.object3D.position.x = Math.sin(this.currentX) * 2.5;
         }
       });
     </script>
