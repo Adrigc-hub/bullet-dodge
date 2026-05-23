@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Slo-Mo VR Cyber-Chaser</title>
+    <!-- Motores principales de VR -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    
+    <!-- Modulos del juego organizados -->
+    <script src="textures.js"></script>
+    <script src="game-logic.js"></script>
+    <script src="combat.js"></script>
+  </head>
+  <body>
+
+    <a-scene game-mode-manager webxr="optionalFeatures: hit-test, local-floor, passthrough">
+      
+      <a-assets>
+        <!-- Las texturas se inyectan dinámicamente aquí mediante JS -->
+        <img id="grid-tex">
+        <img id="cyber-tex">
+        <img id="enemy-tex">
+      </a-assets>
+
+      <!-- Iluminación reactiva -->
+      <a-entity id="ambient-light" type="ambient" light="color: #fff; intensity: 0.6"></a-entity>
+      <a-entity type="directional" light="intensity: 0.8" position="2 4 3"></a-entity>
+
+      <!-- MODO 1: MAPA VIRTUAL (Desaparece automáticamente en modo Passthrough AR) -->
+      <a-entity id="virtual-map">
+        <a-plane position="0 0 0" rotation="-90 0 0" width="50" height="50" material="src: #grid-tex; repeat: 25 25"></a-plane>
+        <!-- Obstáculos fijos del mapa -->
+        <a-box position="-2 1 -5" material="src: #cyber-tex" animation="property: position; to: -2 1.5 -5; dir: alternate; loop: true; dur: 2000"></a-box>
+        <a-box position="3 0.5 -8" material="src: #cyber-tex"></a-box>
+        <a-box position="0 2 -12" width="6" height="0.5" depth="1" material="src: #cyber-tex"></a-box> 
+      </a-entity>
+      
+      <a-sky id="sky-box" color="#050211"></a-sky>
+
+      <!-- JUGADOR / CÁMARA Y CONTROLES -->
+      <a-entity id="rig" movement-controls="controls: checkpoint, gamepad; speed: 0.15">
+        <!-- Cabeza / Detección física -->
+        <a-entity camera position="0 1.6 0" look-controls real-jump-detector>
+          <a-cursor visible="false"></a-cursor>
+        </a-entity>
+
+        <!-- Mano Izquierda: Movimiento Joystick e interfaz -->
+        <a-entity oculus-touch-controls="hand: left" time-controller></a-entity>
+        
+        <!-- Mano Derecha: Armas, Disparos y Golpes directos -->
+        <a-entity oculus-touch-controls="hand: right" vr-weapon fist-melee>
+          <!-- Modelo visual de la pistola generada por código -->
+          <a-box position="0 0 -0.15" scale="0.05 0.08 0.3" color="#333">
+            <a-box position="0 0.04 0.1" scale="1 1.5 0.4" color="#111"></a-box>
+            <a-cyan-laser class="laser-pointer" position="0 0 -0.2"></a-cyan-laser>
+          </a-box>
+        </a-entity>
+      </a-scene>
+
+      <!-- ENEMIGO DE PRUEBA -->
+      <a-entity id="enemy-target" enemy-behavior position="0 1.2 -6" geometry="primitive: cylinder; radius: 0.4; height: 1.5" material="src: #enemy-tex">
+        <a-box position="0 0.5 -0.3" scale="0.2 0.2 0.2" color="#000"></a-box> <!-- Ojo -->
+      </a-entity>
+
+    </a-scene>
+
+    <script>
+      // Ejecución e inyección automática de las texturas procedurales al iniciar
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('grid-tex').src = Textures.createGrid('#1a153a', '#00ffcc');
+        document.getElementById('cyber-tex').src = Textures.createCyber();
+        document.getElementById('enemy-tex').src = Textures.createEnemyPattern();
+      });
+
+      // Lógica de comportamiento de los enemigos respecto al tiempo lento
+      AFRAME.registerComponent('enemy-behavior', {
+        init: function () {
+          this.el.addEventListener('destroy-enemy', () => {
+            this.el.setAttribute('animation', 'property: scale; to: 0 0 0; dur: 200');
+            setTimeout(() => { this.el.parentNode.removeChild(this.el); }, 200);
+          });
+        },
+        tick: function (time, timeDelta) {
+          // El enemigo oscila de izquierda a derecha adaptando su velocidad al tiempo ralentizado
+          if(!this.currentX) this.currentX = 0;
+          this.currentX += 0.002 * timeDelta * window.gameState.timeScale;
+          this.el.object3D.position.x = Math.sin(this.currentX) * 2;
+        }
+      });
+    </script>
+  </body>
+</html>
