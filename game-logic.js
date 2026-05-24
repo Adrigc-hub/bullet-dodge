@@ -11,16 +11,23 @@ AFRAME.registerComponent('control-fix', {
     let sceneEl = this.el.sceneEl;
     let rightHand = document.querySelector('#right-hand');
 
-    // Desactivar el rayo láser de selección automática en cuanto empiece el juego para que no estorbe
     sceneEl.addEventListener('enter-vr', () => {
       document.querySelector('#rig').setAttribute('movement-controls', 'controls: gamepad; speed: 0.20');
     });
 
-    // Detectar si la mano de la pistola está físicamente sobre el arma del menú
-    rightHand.addEventListener('hitstart', (e) => {
-      if (e.detail.el.id === 'menu-gun') { window.gameState.isNearMenuGun = true; }
-    });
-    rightHand.addEventListener('hitend', () => { window.gameState.isNearMenuGun = false; });
+    // Detectar proximidad física al arma usando la distancia del objeto 3D
+    this.menuGun = document.querySelector('#menu-gun');
+  },
+  tick: function() {
+    if(!this.menuGun || window.gameState.hasWeapon) return;
+    
+    let handPos = new THREE.Vector3();
+    document.querySelector('#right-hand').object3D.getWorldPosition(handPos);
+    let gunPos = new THREE.Vector3();
+    this.menuGun.object3D.getWorldPosition(gunPos);
+    
+    // Si la mano está a menos de 45 centímetros del arma, se activa la flag de agarre
+    window.gameState.isNearMenuGun = handPos.distanceTo(gunPos) < 0.45;
   }
 });
 
@@ -29,21 +36,18 @@ AFRAME.registerComponent('menu-system', {
     let startBtn = document.querySelector('#start-button');
     let sandboxBtn = document.querySelector('#sandbox-button');
 
-    // El láser lanza eventos de tipo 'click'. Al recibirlos, cambiamos de fase.
+    // Escuchadores de eventos nativos del puntero láser (Raycaster de A-Frame)
     if(startBtn) startBtn.addEventListener('click', () => { this.startGame(); });
     if(sandboxBtn) sandboxBtn.addEventListener('click', () => { this.startGame(); });
   },
   startGame: function() {
     window.gameState.gameStarted = true;
     
-    // Apagar el rayo láser visual del control derecho al iniciar el combate
+    // Apagar el láser visual para que no estorbe en los disparos
     document.querySelector('#right-hand').setAttribute('raycaster', 'showLine: false; far: 0');
     
-    let menu = document.querySelector('#main-menu');
-    let rearMenu = document.querySelector('#rear-menu');
-    menu.setAttribute('visible', 'false');
-    rearMenu.setAttribute('visible', 'false');
-    
+    document.querySelector('#main-menu').setAttribute('visible', 'false');
+    document.querySelector('#rear-menu').setAttribute('visible', 'false');
     document.querySelector('#game-elements').setAttribute('visible', 'true');
     document.querySelector('#enemy-target').emit('spawn');
   }
