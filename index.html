@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>War of Mannequins: Jujutsu Wizardry</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
@@ -11,6 +12,12 @@
     <script src="combat.js"></script>
   </head>
   <body>
+
+    <div id="hot-reload-screen">
+      <div class="reload-spinner"></div>
+      <h1 style="margin:0; font-size:24px;">ACTUALIZANDO CÓDIGO...</h1>
+      <p style="color:#ff0055; margin-top:5px;">Renderizando nuevas habitaciones y mecánicas</p>
+    </div>
 
     <a-scene menu-system game-manager renderer="colorManagement: true; exposure: 1.5;">
       
@@ -20,24 +27,24 @@
       <a-entity light="type: directional; intensity: 2.5; color: #ffffff;" position="5 15 5"></a-entity>
 
       <a-entity id="main-menu" position="0 1.3 -2.5">
-        <a-entity text="value: WAR OF MANNEQUINS; color: #00ffcc; align: center; width: 6; font: roboto" position="0 0.8 0"></a-entity>
-        <a-entity text="value: WIZARDS & JUJUTSU V3; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
+        <a-entity text="value: WAR OF MANNEQUINS; color: #00ffcc; align: center; width: 6;" position="0 0.8 0"></a-entity>
+        <a-entity text="value: AUTO-RELOAD UPDATE V4; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
 
-        <a-box id="start-button" class="raycastable" position="-0.7 0 0" scale="0.8 0.26 0.1" color="#ff0055">
+        <a-box id="start-button" class="raycastable" position="-0.7 0 0" scale="0.8 0.26 0.1" color="#ff0055" data-clickable>
           <a-entity text="value: MODO COMBATE; color: #fff; align: center; width: 3;" position="0 0 0.06"></a-entity>
         </a-box>
 
-        <a-box id="sandbox-button" class="raycastable" position="0.7 0 0" scale="0.8 0.26 0.1" color="#00ffcc">
+        <a-box id="sandbox-button" class="raycastable" position="0.7 0 0" scale="0.8 0.26 0.1" color="#00ffcc" data-clickable>
           <a-entity text="value: MODO LIBRE; color: #000; align: center; width: 3;" position="0 0 0.06"></a-entity>
         </a-box>
 
-        <a-box id="install-app-button" class="raycastable" position="0 -0.45 0" scale="1.4 0.24 0.1" color="#ffaa00">
+        <a-box id="install-app-button" class="raycastable" position="0 -0.45 0" scale="1.4 0.24 0.1" color="#ffaa00" data-clickable>
           <a-entity text="value: DESCARGAR A HOME QUEST; color: #fff; align: center; width: 2.8;" position="0 0 0.06"></a-entity>
         </a-box>
       </a-entity>
 
       <a-entity id="ingame-hud" position="0 2.5 -3.5" visible="false">
-        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.6 0.2 0.06" color="#222">
+        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.6 0.2 0.06" color="#222" data-clickable>
           <a-entity text="value: MENU; color: #ff0055; align: center; width: 3" position="0 0 0.04"></a-entity>
         </a-box>
         <a-entity id="hud-energy-text" text="value: ENERGIA MALDITA: 100%; color: #00ffcc; width: 3;" position="-1.5 -0.3 0"></a-entity>
@@ -50,8 +57,6 @@
           <a-box position="0 3.5 -15" scale="25 7 0.4" color="#090518"></a-box>
           <a-box position="-12.5 3.5 -5" scale="0.4 7 20" color="#090518"></a-box>
           <a-box position="12.5 3.5 -5" scale="0.4 7 20" color="#090518"></a-box>
-          <a-box class="cover-point" position="-4 2 -6" scale="1.4 4 1.4" color="#1a0f30"></a-box>
-          <a-box class="cover-point" position="5 2 -9" scale="1.8 4 1.8" color="#1a0f30"></a-box>
         </a-entity>
 
         <a-entity id="ground-weapons-container"></a-entity>
@@ -62,46 +67,34 @@
         <a-entity camera position="0 1.6 0" look-controls></a-entity>
 
         <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-left-skills wizard-wand-system>
-          
           <a-entity id="left-controller-mesh" oculus-render-model="hand: left"></a-entity>
-
           <a-entity id="left-hand-mesh" visible="false">
-            <a-sphere radius="0.04" color="#ff0055" material="opacity: 0.7; transparent: true"></a-sphere>
-            <a-cylinder radius="0.01" height="0.08" position="0 -0.05 0" color="#333"></a-cylinder>
+            <a-sphere radius="0.035" color="#ff0055" material="opacity: 0.6; transparent: true"></a-sphere>
           </a-entity>
-
-          <a-entity id="red-lightning-system" visible="false">
-            <a-cylinder id="ray-1" radius="0.006" height="0.3" color="#ff0000" material="shader: flat"></a-cylinder>
-            <a-cylinder id="ray-2" radius="0.006" height="0.3" color="#ff0055" material="shader: flat"></a-cylinder>
-            <a-cylinder id="ray-3" radius="0.006" height="0.3" color="#ff5500" material="shader: flat"></a-cylinder>
-          </a-entity>
-          <a-sphere id="red-core" radius="0.001" color="#ff0033" material="shader: flat" position="0 0.05 -0.1"></a-sphere>
           
           <a-entity id="wizard-wand-visual" position="0 0.02 -0.05" rotation="20 0 0" visible="false">
-            <a-cone radius-bottom="0.015" radius-top="0.003" height="0.35" color="#4a2c11">
-              <a-sphere position="0 0.18 0" radius="0.022" color="#ff00aa" material="emissive: #ff0055"></a-sphere>
+            <a-cone radius-bottom="0.012" radius-top="0.002" height="0.32" color="#4a2c11">
+              <a-sphere position="0 0.16 0" radius="0.02" color="#ff00aa"></a-sphere>
             </a-cone>
           </a-entity>
         </a-entity>
 
         <a-entity id="right-hand" oculus-touch-controls="hand: right" vr-weapon-handler
-                  raycaster="objects: .raycastable; showLine: true; far: 12; interval: 30;"
+                  raycaster="objects: [data-clickable], .raycastable; showLine: true; far: 12; interval: 30;"
                   line="color: #00ffcc; opacity: 0.9">
           
           <a-entity id="right-controller-mesh" oculus-render-model="hand: right"></a-entity>
-
           <a-entity id="right-hand-mesh" visible="false">
-            <a-sphere radius="0.04" color="#00ffcc" material="opacity: 0.7; transparent: true"></a-sphere>
-            <a-cylinder radius="0.01" height="0.08" position="0 -0.05 0" color="#333"></a-cylinder>
+            <a-sphere radius="0.035" color="#00ffcc" material="opacity: 0.6; transparent: true"></a-sphere>
           </a-entity>
 
           <a-entity id="gojo-infinity-shield" position="0 0 0" visible="false">
-            <a-sphere radius="0.09" color="#00aaff" material="wireframe: true; opacity: 0.3" animation="property: rotation; to: 360 360 0; loop: true; dur: 1200; easing: linear"></a-sphere>
+            <a-sphere radius="0.09" color="#00aaff" material="wireframe: true; opacity: 0.25"></a-sphere>
           </a-entity>
 
           <a-entity id="player-weapon-visual" position="0 0.07 -0.04" rotation="0 180 0" visible="false">
-            <a-cylinder radius="0.026" height="0.18" rotation="90 0 0" color="#ffffff"></a-cylinder>
-            <a-box id="weapon-water-grip" position="0 -0.08 0" scale="0.024 0.1 0.035" color="#00ddff"></a-box>
+            <a-cylinder radius="0.024" height="0.16" rotation="90 0 0" color="#ffffff"></a-cylinder>
+            <a-box id="weapon-water-grip" position="0 -0.07 0" scale="0.02 0.09 0.03" color="#00ddff"></a-box>
           </a-entity>
         </a-entity>
 
