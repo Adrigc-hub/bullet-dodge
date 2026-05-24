@@ -3,107 +3,93 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>War of Manequins: Infinite Magic</title>
+    <title>War of Mannequins: Jujutsu Wizardry</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    <script src="textures.js"></script>
     <script src="game-logic.js"></script>
     <script src="combat.js"></script>
   </head>
   <body>
 
-    <a-scene menu-system game-manager
-             renderer="colorManagement: true; exposure: 1.4; antialias: true;">
+    <a-scene menu-system game-manager renderer="colorManagement: true; exposure: 1.5;">
       
-      <a-assets>
-        <img id="space-sky">
-        <img id="water-tex">
-      </a-assets>
+      <a-sky id="galaxy-dome" color="#0d0221" material="shader: gradientshader; topColor: #19003a; bottomColor: #02000d;"></a-sky>
 
-      <a-entity light="type: ambient; color: #6a5dad; intensity: 1.8"></a-entity>
-      <a-entity light="type: directional; intensity: 2.2; color: #fff;" position="2 12 4"></a-entity>
+      <a-entity light="type: ambient; color: #7b68ee; intensity: 1.8"></a-entity>
+      <a-entity light="type: directional; intensity: 2.5; color: #ffffff;" position="5 15 5"></a-entity>
 
-      <a-sphere id="galaxy-bg" radius="75" material="src: #space-sky; shader: flat; side: back;" rotation="0 0 0"></a-sphere>
+      <a-entity id="main-menu" position="0 1.3 -2.5">
+        <a-entity text="value: WAR OF MANNEQUINS; color: #00ffcc; align: center; width: 6; font: roboto" position="0 0.8 0"></a-entity>
+        <a-entity text="value: WIZARDS & JUJUTSU UPDATE; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
 
-      <a-entity id="ui-container" position="0 1.4 -2.5">
-        <a-entity id="main-menu">
-          <a-entity text="value: WAR OF MANEQUINS; color: #00ffcc; align: center; width: 6.5; font: roboto" position="0 0.8 0"></a-entity>
-          <a-entity text="value: INFINITE MAGIC V2; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
+        <a-box id="start-button" class="raycastable" position="-0.7 0 0" scale="0.8 0.26 0.1" color="#ff0055">
+          <a-entity text="value: MODO COMBATE; color: #fff; align: center; width: 3;" position="0 0 0.06"></a-entity>
+        </a-box>
 
-          <a-box id="start-button" class="raycastable" position="-0.7 0.0 0" scale="0.8 0.28 0.12" color="#ff0055" data-clickable>
-            <a-entity text="value: MODO COMBATE; color: #ffffff; align: center; width: 3.2;" position="0 0 0.07"></a-entity>
-          </a-box>
+        <a-box id="sandbox-button" class="raycastable" position="0.7 0 0" scale="0.8 0.26 0.1" color="#00ffcc">
+          <a-entity text="value: MODO LIBRE; color: #000; align: center; width: 3;" position="0 0 0.06"></a-entity>
+        </a-box>
 
-          <a-box id="sandbox-button" class="raycastable" position="0.7 0.0 0" scale="0.8 0.28 0.12" color="#00ffcc" data-clickable>
-            <a-entity text="value: MODO LIBRE; color: #000000; align: center; width: 3.2;" position="0 0 0.07"></a-entity>
-          </a-box>
-
-          <a-box id="install-app-button" class="raycastable" position="0 -0.5 0" scale="1.3 0.25 0.12" color="#ffaa00" data-clickable>
-            <a-entity text="value: INSTALAR APLICACION DE JUEGO; color: #ffffff; align: center; width: 3.0;" position="0 0 0.07"></a-entity>
-          </a-box>
-
-          <a-entity id="menu-gun-anchor" position="0 -1.0 0.3" rotation="0 30 0">
-            <a-cylinder radius="0.035" height="0.18" rotation="90 0 0" color="#dddddd">
-              <a-box position="0 -0.1 -0.04" scale="0.025 0.11 0.04" src="#water-tex"></a-box>
-            </a-cylinder>
-            <a-entity text="value: USA GRIP PARA LLEVAR; color: #00ffcc; align: center; width: 1.8;" position="0 0.18 0"></a-entity>
-          </a-entity>
-        </a-entity>
-      </a-entity>
-
-      <a-entity id="ingame-hud" position="0 2.5 -4" visible="false">
-        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.7 0.22 0.08" color="#333333" data-clickable>
-          <a-entity text="value: VOLVER AL MENU; color: #ff0055; align: center; width: 3;" position="0 0 0.05"></a-entity>
+        <a-box id="install-app-button" class="raycastable" position="0 -0.45 0" scale="1.4 0.24 0.1" color="#ffaa00">
+          <a-entity text="value: DESCARGAR A HOME QUEST; color: #fff; align: center; width: 2.8;" position="0 0 0.06"></a-entity>
         </a-box>
       </a-entity>
 
+      <a-entity id="ingame-hud" position="0 2.5 -3.5" visible="false">
+        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.6 0.2 0.06" color="#222">
+          <a-entity text="value: MENU; color: #ff0055; align: center; width: 3" position="0 0 0.04"></a-entity>
+        </a-box>
+        <a-entity id="hud-energy-text" text="value: ENERGIA MALDITA: 100%; color: #00ffcc; width: 3;" position="-1.5 -0.3 0"></a-entity>
+        <a-entity id="hud-mana-text" text="value: MANA: 100%; color: #ff00aa; width: 3;" position="0.5 -0.3 0"></a-entity>
+      </a-entity>
+
       <a-entity id="game-world" visible="false">
-        <a-entity id="room-structures">
-          <a-grid src="#space-sky" width="50" height="50" opacity="0.3" static-body position="0 0 0"></a-grid>
-          <a-box position="0 4 -15" scale="30 8 0.5" color="#110033" material="opacity: 0.7; transparent: true"></a-box>
-          <a-box position="-15 4 0" scale="0.5 8 30" color="#110033" material="opacity: 0.7; transparent: true"></a-box>
-          <a-box position="15 4 0" scale="0.5 8 30" color="#110033" material="opacity: 0.7; transparent: true"></a-box>
-          <a-box position="-5 2.5 -7" scale="1.5 5 1.5" color="#220055"></a-box>
-          <a-box position="6 2.5 -9" scale="2 5 2" color="#220055"></a-box>
+        <a-entity id="map-geometry">
+          <a-grid color="#120a2a" width="60" height="60" opacity="0.4"></a-grid>
+          <a-box position="0 3.5 -15" scale="25 7 0.4" color="#090518"></a-box>
+          <a-box position="-12.5 3.5 -5" scale="0.4 7 20" color="#090518"></a-box>
+          <a-box position="12.5 3.5 -5" scale="0.4 7 20" color="#090518"></a-box>
+          <a-box class="cover-point" position="-4 2 -6" scale="1.4 4 1.4" color="#1a0f30"></a-box>
+          <a-box class="cover-point" position="5 2 -9" scale="1.8 4 1.8" color="#1a0f30"></a-box>
+          <a-box class="cover-point" position="0 2 -13" scale="3 4 1" color="#1a0f30"></a-box>
         </a-entity>
 
+        <a-entity id="ground-weapons-container"></a-entity>
         <a-entity id="enemy-container"></a-entity>
       </a-entity>
 
-      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.22">
+      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.25">
         <a-entity camera position="0 1.6 0" look-controls></a-entity>
 
-        <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-red-power>
-          <a-sphere id="red-core" radius="0.01" color="#ff0011" material="shader: flat; transparent: true; opacity: 0" position="0 0.05 -0.12"></a-sphere>
-          <a-torus id="red-ring-1" radius="0.06" radius-tubular="0.003" color="#ff0055" material="transparent: true; opacity: 0" position="0 0.05 -0.12"></a-torus>
-          <a-torus id="red-ring-2" radius="0.09" radius-tubular="0.002" color="#ffaa00" material="transparent: true; opacity: 0" position="0 0.05 -0.12" rotation="90 0 0"></a-torus>
-        </a-entity>
-
-        <a-entity id="right-hand" oculus-touch-controls="hand: right" vr-weapon
-                  laser-controls="hand: right" raycaster="objects: .raycastable; showLine: true; far: 12; interval: 40;"
-                  line="color: #00ffcc; opacity: 0.9">
+        <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-left-skills wizard-wand-system>
+          <a-entity id="red-lightning-system" visible="false">
+            <a-cylinder id="ray-1" radius="0.006" height="0.3" color="#ff0000" material="shader: flat" position="0 0.1 0"></a-cylinder>
+            <a-cylinder id="ray-2" radius="0.006" height="0.3" color="#ff0055" material="shader: flat" position="0 0.1 0"></a-cylinder>
+            <a-cylinder id="ray-3" radius="0.006" height="0.3" color="#ff5500" material="shader: flat" position="0 0.1 0"></a-cylinder>
+          </a-entity>
+          <a-sphere id="red-core" radius="0.001" color="#ff0033" material="shader: flat" position="0 0.05 -0.1"></a-sphere>
           
-          <a-entity id="gojo-infinity-fire" position="0 0 0" visible="false">
-            <a-sphere radius="0.07" color="#00aaff" material="wireframe: true; opacity: 0.45" animation="property: rotation; to: 360 0 360; loop: true; dur: 1000; easing: linear"></a-sphere>
-            <a-sphere radius="0.09" color="#00ffff" material="wireframe: true; opacity: 0.2" animation="property: rotation; to: 0 360 180; loop: true; dur: 1500; easing: linear"></a-sphere>
+          <a-entity id="wizard-wand-visual" position="0 0.02 -0.05" rotation="20 0 0" visible="false">
+            <a-cone radius-bottom="0.015" radius-top="0.003" height="0.35" color="#4a2c11">
+              <a-sphere position="0 0.18 0" radius="0.022" color="#ff00aa" material="emissive: #ff0055"></a-sphere>
+            </a-cone>
           </a-entity>
-
-          <a-entity id="player-weapon-visual" position="0 0.08 -0.04" rotation="0 180 0" visible="false">
-            <a-cylinder radius="0.028" height="0.18" rotation="90 0 0" color="#ffffff"></a-cylinder>
-            <a-box id="weapon-water-grip" position="0 -0.08 0.0" scale="0.024 0.11 0.038" src="#water-tex" material="opacity: 0.85; transparent: true;"></a-box>
-          </a-entity>
-
         </a-entity>
+
+        <a-entity id="right-hand" oculus-touch-controls="hand: right" vr-weapon-handler>
+          <a-entity id="gojo-infinity-shield" position="0 0 0" visible="false">
+            <a-sphere radius="0.08" color="#00aaff" material="wireframe: true; opacity: 0.35" animation="property: rotation; to: 360 360 0; loop: true; dur: 1200; easing: linear"></a-sphere>
+          </a-entity>
+          <a-entity id="player-weapon-visual" position="0 0.07 -0.04" rotation="0 180 0" visible="false">
+            <a-cylinder radius="0.026" height="0.18" rotation="90 0 0" color="#ffffff"></a-cylinder>
+            <a-box id="weapon-water-grip" position="0 -0.08 0" scale="0.024 0.1 0.035" color="#00ddff" material="opacity: 0.8; transparent: true;"></a-box>
+          </a-entity>
+        </a-entity>
+
       </a-entity>
 
     </a-scene>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById('space-sky').src = Textures.createNebulaSky();
-        document.getElementById('water-tex').src = Textures.createWaterPattern();
-      });
-    </script>
   </body>
 </html>
