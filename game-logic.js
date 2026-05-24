@@ -9,12 +9,10 @@ window.gameState = {
   spellsCastCount: 0
 };
 
-// ================= SISTEMA AUTOMÁTICO DE RECONEXIÓN POR ACTUALIZACIÓN =================
-const CODE_VERSION = "1.4.2"; // Cambia este string cada vez que edites el código
+const CODE_VERSION = "1.5.0"; // Actualizado
 
 window.HotReloader = {
   checkUpdates: function() {
-    // Almacenar el estado actual si el juego ya inició para no perder progreso
     if(window.gameState.gameStarted) {
       localStorage.setItem('quest_wizard_backup', JSON.stringify({
         energy: window.gameState.energy,
@@ -23,11 +21,7 @@ window.HotReloader = {
       }));
     }
 
-    // Monitoreo simulado de cambios en el servidor local/GitHub
     setInterval(() => {
-      // En una infraestructura de desarrollo real, aquí se consulta un endpoint o websocket.
-      // Si detectamos un desfase, disparamos la secuencia de auto-unión:
-      let checkRemoteVersion = CODE_VERSION; 
       if (localStorage.getItem('force_update_trigger') === 'true') {
         localStorage.removeItem('force_update_trigger');
         this.executeReconnectionSequence();
@@ -37,10 +31,10 @@ window.HotReloader = {
 
   executeReconnectionSequence: function() {
     let screen = document.getElementById('hot-reload-screen');
-    if(screen) screen.classList.add('active'); // Saca a los jugadores a la pantalla negra técnica
+    if(screen) screen.classList.add('active'); 
 
     setTimeout(() => {
-      window.location.reload(); // Recarga la pestaña y renderiza el nuevo código
+      window.location.reload(); 
     }, 1000);
   },
 
@@ -50,7 +44,6 @@ window.HotReloader = {
       let data = JSON.parse(backup);
       localStorage.removeItem('quest_wizard_backup');
       
-      // Auto-unión inmediata tras renderizar
       setTimeout(() => {
         let menuComp = document.querySelector('[menu-system]').components['menu-system'];
         if(menuComp) {
@@ -63,10 +56,16 @@ window.HotReloader = {
   }
 };
 
-// Iniciar rastreadores al cargar la ventana
 window.addEventListener('DOMContentLoaded', () => {
   window.HotReloader.checkUpdates();
   window.HotReloader.recoverSession();
+
+  // Asegurar compatibilidad WebXR: desvanecer la pantalla de carga del DOM plano si ya entró a VR
+  let sceneEl = document.querySelector('a-scene');
+  sceneEl.addEventListener('enter-vr', () => {
+    let screen = document.getElementById('hot-reload-screen');
+    if(screen) screen.classList.remove('active');
+  });
 });
 
 window.GameAudio = {
@@ -114,7 +113,6 @@ AFRAME.registerComponent('menu-system', {
     if (installBtn) {
       installBtn.addEventListener('click', () => {
         installBtn.setAttribute('color', '#00ffcc');
-        // Comando útil para probar el auto-reload de forma manual desde las Quest:
         localStorage.setItem('force_update_trigger', 'true');
         alert("¡Ejecutando forzado de actualización! Guardando sesión y reiniciando...");
       });
@@ -135,7 +133,7 @@ AFRAME.registerComponent('menu-system', {
 
     let rightHand = document.querySelector('#right-hand');
     if (inGame) {
-      rightHand.setAttribute('raycaster', 'objects: .none; far: 0.01'); // Apaga colisiones molestas del menú en juego
+      rightHand.setAttribute('raycaster', 'objects: .none; far: 0.01'); 
       this.buildMannequinArena();
     } else {
       rightHand.setAttribute('raycaster', 'objects: [data-clickable], .raycastable; far: 12');
