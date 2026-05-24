@@ -1,0 +1,16 @@
+{
+  "short_name": "WarManequins",
+  "name": "War of Manequins: Infinite Magic",
+  "icons": [
+    {
+      "src": "https://aframe.io/releases/1.5.0/images/aframe-logo-128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#010005",
+  "theme_color": "#00ffcc",
+  "display": "standalone",
+  "orientation": "landscape"
+}
