@@ -4,7 +4,7 @@ const Textures = {
     canvas.width = 512; canvas.height = 512;
     let ctx = canvas.getContext('2d');
     ctx.fillStyle = baseColor; ctx.fillRect(0, 0, 512, 512);
-    ctx.strokeStyle = gridColor; ctx.lineWidth = 4;
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 6;
     ctx.strokeRect(0, 0, 512, 512);
     return canvas.toDataURL();
   },
@@ -12,17 +12,10 @@ const Textures = {
     let canvas = document.createElement('canvas');
     canvas.width = 256; canvas.height = 256;
     let ctx = canvas.getContext('2d');
-    // Degradado de agua real
-    let grad = ctx.createLinearGradient(0, 0, 256, 256);
-    grad.addColorStop(0, '#00d2ff');
-    grad.addColorStop(0.5, '#0066ff');
-    grad.addColorStop(1, '#001166');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
-    
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = 3;
-    for(let i=0; i<3; i++) {
-      ctx.beginPath(); ctx.arc(64 * i, 64 * i, 50, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#0055ff'; ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#00ddff';
+    for(let i=0; i<6; i++) {
+      ctx.fillRect(Math.random()*256, Math.random()*256, 40, 40);
     }
     return canvas.toDataURL();
   },
@@ -31,28 +24,30 @@ const Textures = {
     canvas.width = 1024; canvas.height = 512;
     let ctx = canvas.getContext('2d');
     
-    // Base espacial profunda
-    ctx.fillStyle = '#030014';
-    ctx.fillRect(0, 0, 1024, 512);
+    // Espacio profundo magenta/púrpura de fondo
+    let skyGrad = ctx.createLinearGradient(0, 0, 1024, 512);
+    skyGrad.addColorStop(0, '#02000a');
+    skyGrad.addColorStop(0.5, '#12002b');
+    skyGrad.addColorStop(1, '#050018');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, 1024, 512);
     
-    // Nubes de la galaxia hipercolorida (Magentas, púrpuras y cian)
-    let colors = ['rgba(255, 0, 128, 0.25)', 'rgba(0, 221, 255, 0.2)', 'rgba(110, 0, 255, 0.3)'];
-    for(let i = 0; i < 45; i++) {
+    // Nubes de la galaxia coloridas
+    let colors = ['rgba(255, 0, 150, 0.3)', 'rgba(0, 230, 255, 0.25)', 'rgba(130, 0, 255, 0.35)'];
+    for(let i = 0; i < 30; i++) {
       let x = Math.random() * 1024;
       let y = Math.random() * 512;
-      let r = Math.random() * 200 + 80;
-      let grad = ctx.createRadialGradient(x, y, 10, x, y, r);
+      let r = Math.random() * 180 + 70;
+      let grad = ctx.createRadialGradient(x, y, 5, x, y, r);
       grad.addColorStop(0, colors[Math.floor(Math.random() * colors.length)]);
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
     }
     
-    // Capa de estrellas brillantes
+    // Campo de estrellas densas
     ctx.fillStyle = '#ffffff';
-    for(let i = 0; i < 400; i++) {
-      let size = Math.random() * 2.5 + 0.5;
-      ctx.fillRect(Math.random() * 1024, Math.random() * 512, size, size);
+    for(let i = 0; i < 350; i++) {
+      ctx.fillRect(Math.random() * 1024, Math.random() * 512, 2, 2);
     }
     return canvas.toDataURL();
   }
