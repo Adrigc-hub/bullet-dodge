@@ -1,79 +1,93 @@
-// Sistema oscilatorio de sonido nativo por osciladores (Evita depender de archivos externos rotos)
-function triggerSynthSound(type) {
-  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let osc = audioCtx.createOscillator();
-  let gain = audioCtx.createGain();
-  
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  
-  if (type === 'shoot') {
-    // Sonido de disparo hidrodinámico agudo de la pistola
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.16);
-  } else if (type === 'charge') {
-    // Zumbido ascendente de energía maldita inestable (Rojo)
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-    osc.frequency.linearRampToValueAtTime(380, audioCtx.currentTime + 2.0);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    osc.start(); osc.stop(audioCtx.currentTime + 2.0);
-  } else if (type === 'red_explosion') {
-    // Estallido sónico masivo del Rojo al ser liberado
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
-    gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.45);
+// COMPONENTE PARA CREAR ENEMIGOS CON FORMA HUMANA (NPCs)
+AFRAME.registerComponent('human-npc-behavior', {
+  init: function () {
+    let el = this.el;
+    window.gameState.activeEnemies.push(el);
+
+    // --- CONSTRUCCIÓN PROCEDURAL DE MODELO HUMANO (Tronco, Cabeza, Brazos, Piernas) ---
+    // Cabeza
+    let head = document.createElement('a-sphere');
+    head.setAttribute('radius', '0.14'); head.setAttribute('position', '0 1.6 0');
+    head.setAttribute('color', '#dddddd'); el.appendChild(head);
+
+    // Tronco / Pecho
+    let torso = document.createElement('a-cylinder');
+    torso.setAttribute('radius', '0.18'); torso.setAttribute('height', '0.6');
+    torso.setAttribute('position', '0 1.1 0'); torso.setAttribute('color', '#222222');
+    el.appendChild(torso);
+
+    // Brazos (Izquierdo y Derecho)
+    let leftArm = document.createElement('a-cylinder');
+    leftArm.setAttribute('radius', '0.05'); leftArm.setAttribute('height', '0.5');
+    leftArm.setAttribute('position', '-0.25 1.1 0'); leftArm.setAttribute('color', '#555555');
+    el.appendChild(leftArm);
+
+    let rightArm = document.createElement('a-cylinder');
+    rightArm.setAttribute('radius', '0.05'); rightArm.setAttribute('height', '0.5');
+    rightArm.setAttribute('position', '0.25 1.1 0'); rightArm.setAttribute('color', '#555555');
+    el.appendChild(rightArm);
+
+    // Piernas
+    let leftLeg = document.createElement('a-cylinder');
+    leftLeg.setAttribute('radius', '0.06'); leftLeg.setAttribute('height', '0.6');
+    leftLeg.setAttribute('position', '-0.1 0.5 0'); leftLeg.setAttribute('color', '#111111');
+    el.appendChild(leftLeg);
+
+    let rightLeg = document.createElement('a-cylinder');
+    rightLeg.setAttribute('radius', '0.06'); rightLeg.setAttribute('height', '0.6');
+    rightLeg.setAttribute('position', '0.1 0.5 0'); rightLeg.setAttribute('color', '#111111');
+    el.appendChild(rightLeg);
+  },
+
+  tick: function(time, timeDelta) {
+    if (!window.gameState.gameStarted) return;
+    // Inteligencia Artificial Básica: Avanzar lentamente hacia la posición de la cámara del jugador
+    let playerPos = new THREE.Vector3(0, 0, 0); // Rig Origen
+    let npcPos = this.el.object3D.position;
+    
+    let dir = new THREE.Vector3().subVectors(playerPos, npcPos).normalize();
+    this.el.object3D.translateOnAxis(dir, 0.8 * (timeDelta / 1000));
+    this.el.object3D.position.y = 0; // Pegados al suelo
   }
-}
+});
 
 AFRAME.registerComponent('vr-weapon', {
   init: function () {
     let el = this.el;
 
-    // AGARRAR: Activación desde el mango inferior de agua
+    // EVENTO RECOGER ARMA (Mango de agua inferior)
     el.addEventListener('gripdown', () => {
       if (window.gameState.isNearMenuGun && !window.gameState.hasWeapon) {
         window.gameState.hasWeapon = true;
         document.querySelector('#player-weapon-visual').setAttribute('visible', 'true');
-        document.querySelector('#menu-gun').setAttribute('visible', 'false');
+        document.querySelector('#menu-gun-anchor').setAttribute('visible', 'false');
         
-        // El Infinito envolvente se activa únicamente al portar el arma
+        // ACTIVAR EL INFINITO PASIVO AL PORTAR EL ARMA
         document.querySelector('#gojo-infinity-fire').setAttribute('visible', 'true');
       }
-      if (window.gameState.hasWeapon) { window.gameState.timeScale = 0.15; }
     });
 
-    el.addEventListener('gripup', () => { window.gameState.timeScale = 1.0; });
-
-    // DISPARO DE PISTOLA ACTIVO
+    // ACCIÓN DISPARAR BALA DE AGUA
     el.addEventListener('triggerdown', () => {
-      if (!window.gameState.hasWeapon) return;
+      if (!window.gameState.hasWeapon || !window.gameState.gameStarted) return;
       
-      // Lanzar sonido de disparo
-      triggerSynthSound('shoot');
+      window.GameAudio.play('shoot');
 
-      // Animación de retroceso físico de la pistola (Efecto de disparo)
-      let visualWeapon = document.querySelector('#player-weapon-visual');
-      visualWeapon.setAttribute('position', '0 0.08 -0.01'); // Retrocede en Z
-      setTimeout(() => { visualWeapon.setAttribute('position', '0 0.08 -0.05'); }, 80);
+      // Animación física de retroceso
+      let visualGun = document.querySelector('#player-weapon-visual');
+      visualGun.setAttribute('position', '0 0.08 0.0');
+      setTimeout(() => { visualGun.setAttribute('position', '0 0.08 -0.04'); }, 70);
 
-      // Crear proyectil de agua
+      // Crear proyectil cilíndrico de agua
       let bullet = document.createElement('a-entity');
-      let pos = new THREE.Vector3();
-      let dir = new THREE.Vector3();
+      let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
       this.el.object3D.getWorldPosition(pos);
       this.el.object3D.getWorldDirection(dir);
       
-      bullet.setAttribute('geometry', {primitive: 'sphere', radius: 0.03});
-      bullet.setAttribute('material', {src: '#water-tex', color: '#00ddff'});
+      bullet.setAttribute('geometry', {primitive: 'cylinder', radius: 0.02, height: 0.15});
+      bullet.setAttribute('material', {src: '#water-tex', color: '#00eeff'});
       bullet.setAttribute('position', pos);
+      bullet.setAttribute('rotation', '90 0 0');
       dir.multiplyScalar(-1);
       bullet.setAttribute('bullet-behavior', { dx: dir.x, dy: dir.y, dz: dir.z, isRed: false });
       this.el.sceneEl.appendChild(bullet);
@@ -81,41 +95,51 @@ AFRAME.registerComponent('vr-weapon', {
   }
 });
 
-// ================= COMPONENTE AVANZADO: REVERSAL ROJO (ESTILO ANIME) =================
+// ================= TÉCNICA REVERSAL ROJO MEJORADA (Efecto de Compresión a Canica) =================
 AFRAME.registerComponent('gojo-red-power', {
   init: function () {
     this.isCharging = false;
     this.chargeTimer = 0;
     this.core = document.querySelector('#red-core');
-    this.aura = document.querySelector('#red-aura');
+    this.r1 = document.querySelector('#red-ring-1');
+    this.r2 = document.querySelector('#red-ring-2');
 
     this.el.addEventListener('xbuttondown', () => {
+      if (!window.gameState.gameStarted) return;
       this.isCharging = true;
       this.chargeTimer = 0;
       
-      // Audio de carga ascendente
-      triggerSynthSound('charge');
+      window.GameAudio.play('charge');
 
-      // ANIMACIÓN DE CARGA COMPLETA: El núcleo destella y se comprime mientras el aura gira violentamente
-      this.core.setAttribute('material', 'opacity: 0.9; color: #ff0022');
-      this.core.setAttribute('animation', 'property: scale; to: 4 4 4; dur: 2000; easing: easeInQuad');
+      // EFECTO ANIME DE CARGA: Empieza translúcido como aire, crece y luego se comprime al tamaño de una canica ultra-concentrada
+      this.core.setAttribute('material', 'opacity: 0.95; color: #ff0011');
+      this.core.setAttribute('animation', 'property: scale; from: 0.2 0.2 0.2; to: 4 4 4; dur: 900; easing: easeOutQuad');
       
-      this.aura.setAttribute('material', 'opacity: 0.8; color: #ff5500');
-      this.aura.setAttribute('animation', 'property: rotation; to: 360 360 0; dur: 500; loop: true; easing: linear');
+      // Pasar a modo canica miniatura super-brillante a los 1000ms
+      setTimeout(() => {
+        if(this.isCharging) {
+          this.core.setAttribute('animation', 'property: scale; to: 0.4 0.4 0.4; dur: 800; easing: easeInElastic');
+          this.core.setAttribute('material', 'color: #ffffff; emissive: #ff0033;'); // Núcleo blanco incandescente
+        }
+      }, 1000);
+
+      // Anillos orbitales girando salvajemente
+      this.r1.setAttribute('material', 'opacity: 0.8');
+      this.r1.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 400; loop: true; easing: linear');
+      this.r2.setAttribute('material', 'opacity: 0.8');
+      this.r2.setAttribute('animation', 'property: rotation; to: 360 0 360; dur: 400; loop: true; easing: linear');
     });
 
     this.el.addEventListener('xbuttonup', () => {
       if (this.isCharging) {
         this.isCharging = false;
         
-        // Limpiar efectos de la mano
         this.core.setAttribute('material', 'opacity: 0');
-        this.core.setAttribute('scale', '1 1 1');
-        this.aura.setAttribute('material', 'opacity: 0');
+        this.r1.setAttribute('material', 'opacity: 0');
+        this.r2.setAttribute('material', 'opacity: 0');
 
-        // Validar si acumuló los 2 segundos enteros
-        if (this.chargeTimer >= 2.0) {
-          this.fireRedTechnique();
+        if (this.chargeTimer >= 1.8) {
+          this.fireRedVacuum();
         }
       }
     });
@@ -125,35 +149,25 @@ AFRAME.registerComponent('gojo-red-power', {
     if (this.isCharging) { this.chargeTimer += timeDelta / 1000; }
   },
 
-  fireRedTechnique: function() {
-    // 1. Sonido de la explosión técnica
-    triggerSynthSound('red_explosion');
+  fireRedVacuum: function() {
+    window.GameAudio.play('red_blast');
 
-    // 2. Voz de Gojo sintética controlada
-    if ('speechSynthesis' in window) {
-      let speech = new SpeechSynthesisUtterance("Kyoho Aka");
-      speech.lang = "ja-JP"; speech.pitch = 0.5; speech.rate = 0.9;
-      window.speechSynthesis.speak(speech);
-    }
-
-    // 3. Generar Proyectil "Rojo" expansivo con ondas de choque
     let redOrb = document.createElement('a-entity');
-    let pos = new THREE.Vector3();
-    let dir = new THREE.Vector3();
+    let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
     this.el.object3D.getWorldPosition(pos);
     this.el.object3D.getWorldDirection(dir);
 
-    redOrb.setAttribute('geometry', {primitive: 'sphere', radius: 0.35});
-    redOrb.setAttribute('material', {color: '#ff0033', emissive: '#ff0000', roughness: 0.1});
+    // Sale disparado inicialmente compacto y explota al avanzar
+    redOrb.setAttribute('geometry', {primitive: 'sphere', radius: 0.12}); // Comienza del tamaño de una canica de plasma
+    redOrb.setAttribute('material', {color: '#ff0033', shader: 'flat'});
     redOrb.setAttribute('position', pos);
     
-    // EFECTO VISUAL ADICIONAL: Ondas de choque secundarias pegadas al orbe rojo
-    let shockwave = document.createElement('a-torus');
-    shockwave.setAttribute('radius', 0.5);
-    shockwave.setAttribute('radius-tubular', 0.02);
-    shockwave.setAttribute('color', '#ff5500');
-    shockwave.setAttribute('animation', 'property: scale; to: 2 2 2; dur: 400; loop: true');
-    redOrb.appendChild(shockwave);
+    // Ondas de choque secundarias pegadas al proyectil
+    let waves = document.createElement('a-torus');
+    waves.setAttribute('radius', 0.25); waves.setAttribute('radius-tubular', 0.015);
+    waves.setAttribute('color', '#ffaa00');
+    waves.setAttribute('animation', 'property: scale; to: 3 3 3; dur: 250; loop: true');
+    redOrb.appendChild(waves);
 
     dir.multiplyScalar(-1);
     redOrb.setAttribute('bullet-behavior', { dx: dir.x, dy: dir.y, dz: dir.z, isRed: true });
@@ -161,23 +175,33 @@ AFRAME.registerComponent('gojo-red-power', {
   }
 });
 
-// Comportamiento cinemático de los proyectiles
+// COMPORTAMIENTO DE BALAS DE AGUA Y ROJO MÁXIMO
 AFRAME.registerComponent('bullet-behavior', {
   schema: { dx: {type: 'number'}, dy: {type: 'number'}, dz: {type: 'number'}, isRed: {type: 'boolean'} },
   tick: function (time, timeDelta) {
-    let speedFactor = this.data.isRed ? 42 : 22; // El ataque Rojo viaja a velocidad desproporcionada estilo anime
-    let currentSpeed = speedFactor * (timeDelta / 1000) * window.gameState.timeScale;
-    
+    let currentSpeed = (this.data.isRed ? 45 : 20) * (timeDelta / 1000);
     this.el.object3D.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), currentSpeed);
     
-    let pos = this.el.object3D.position;
-    let enemy = document.querySelector('#enemy-target');
-    if(enemy) {
-      if(pos.distanceTo(enemy.object3D.position) < 1.2) {
-        enemy.emit('destroy-enemy');
-        if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    let bulletPos = this.el.object3D.position;
+
+    // Verificar colisión con todos los enemigos activos de la habitación
+    let enemies = window.gameState.activeEnemies;
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      let enemy = enemies[i];
+      if (enemy && enemy.object3D) {
+        let enemyPos = enemy.object3D.position;
+        if (bulletPos.distanceTo(enemyPos) < 1.4) {
+          // Destruir al enemigo y removerlo del registro global
+          if (enemy.parentNode) enemy.parentNode.removeChild(enemy);
+          enemies.splice(i, 1);
+          
+          if (this.el.parentNode) this.el.parentNode.removeChild(this.el);
+          return;
+        }
       }
     }
-    if (Math.abs(pos.z) > 40) { if(this.el.parentNode) this.el.parentNode.removeChild(this.el); }
+
+    // Auto-destrucción por distancia fuera de rango
+    if (Math.abs(bulletPos.z) > 45) { if(this.el.parentNode) this.el.parentNode.removeChild(this.el); }
   }
 });
