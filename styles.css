@@ -4,10 +4,10 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #03010a;
+  background-color: #05030f;
 }
 
-/* Forzar que el puntero e interfaces de A-Frame respondan al instante sin bloqueos en el visor */
+/* Permitir clics instantáneos del raycaster de A-Frame sin capas fantasma */
 .a-canvas {
   z-index: 1 !important;
   pointer-events: auto !important;
