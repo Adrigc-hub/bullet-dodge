@@ -9,7 +9,66 @@ window.gameState = {
   spellsCastCount: 0
 };
 
-// MOTOR UNIFICADO DE AUDIO INMORTAL
+// ================= SISTEMA AUTOMÁTICO DE RECONEXIÓN POR ACTUALIZACIÓN =================
+const CODE_VERSION = "1.4.2"; // Cambia este string cada vez que edites el código
+
+window.HotReloader = {
+  checkUpdates: function() {
+    // Almacenar el estado actual si el juego ya inició para no perder progreso
+    if(window.gameState.gameStarted) {
+      localStorage.setItem('quest_wizard_backup', JSON.stringify({
+        energy: window.gameState.energy,
+        mana: window.gameState.mana,
+        inGame: true
+      }));
+    }
+
+    // Monitoreo simulado de cambios en el servidor local/GitHub
+    setInterval(() => {
+      // En una infraestructura de desarrollo real, aquí se consulta un endpoint o websocket.
+      // Si detectamos un desfase, disparamos la secuencia de auto-unión:
+      let checkRemoteVersion = CODE_VERSION; 
+      if (localStorage.getItem('force_update_trigger') === 'true') {
+        localStorage.removeItem('force_update_trigger');
+        this.executeReconnectionSequence();
+      }
+    }, 2000);
+  },
+
+  executeReconnectionSequence: function() {
+    let screen = document.getElementById('hot-reload-screen');
+    if(screen) screen.classList.add('active'); // Saca a los jugadores a la pantalla negra técnica
+
+    setTimeout(() => {
+      window.location.reload(); // Recarga la pestaña y renderiza el nuevo código
+    }, 1000);
+  },
+
+  recoverSession: function() {
+    let backup = localStorage.getItem('quest_wizard_backup');
+    if(backup) {
+      let data = JSON.parse(backup);
+      localStorage.removeItem('quest_wizard_backup');
+      
+      // Auto-unión inmediata tras renderizar
+      setTimeout(() => {
+        let menuComp = document.querySelector('[menu-system]').components['menu-system'];
+        if(menuComp) {
+          window.gameState.energy = data.energy;
+          window.gameState.mana = data.mana;
+          menuComp.toggleMatchState(true);
+        }
+      }, 500);
+    }
+  }
+};
+
+// Iniciar rastreadores al cargar la ventana
+window.addEventListener('DOMContentLoaded', () => {
+  window.HotReloader.checkUpdates();
+  window.HotReloader.recoverSession();
+});
+
 window.GameAudio = {
   ctx: null,
   play: function(type) {
@@ -22,21 +81,21 @@ window.GameAudio = {
     let t = this.ctx.currentTime;
 
     if (type === 'shoot') {
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(500, t);
-      osc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(480, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.09);
       gain.gain.setValueAtTime(0.2, t); osc.start(t); osc.stop(t + 0.1);
     } else if (type === 'charge_red') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(90, t);
-      osc.frequency.linearRampToValueAtTime(550, t + 1.6);
-      gain.gain.setValueAtTime(0.2, t); osc.start(t); osc.stop(t + 1.65);
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(95, t);
+      osc.frequency.linearRampToValueAtTime(580, t + 1.5);
+      gain.gain.setValueAtTime(0.18, t); osc.start(t); osc.stop(t + 1.55);
     } else if (type === 'purple_nuke') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(280, t);
-      osc.frequency.exponentialRampToValueAtTime(20, t + 0.5);
-      gain.gain.setValueAtTime(0.6, t); osc.start(t); osc.stop(t + 0.55);
+      osc.type = 'sine'; osc.frequency.setValueAtTime(260, t);
+      osc.frequency.exponentialRampToValueAtTime(15, t + 0.5);
+      gain.gain.setValueAtTime(0.55, t); osc.start(t); osc.stop(t + 0.52);
     } else if (type === 'fireball') {
-      osc.type = 'square'; osc.frequency.setValueAtTime(320, t);
-      osc.frequency.linearRampToValueAtTime(100, t + 0.2);
-      gain.gain.setValueAtTime(0.25, t); osc.start(t); osc.stop(t + 0.22);
+      osc.type = 'square'; osc.frequency.setValueAtTime(300, t);
+      osc.frequency.linearRampToValueAtTime(90, t + 0.18);
+      gain.gain.setValueAtTime(0.2, t); osc.start(t); osc.stop(t + 0.2);
     }
   }
 };
@@ -48,40 +107,39 @@ AFRAME.registerComponent('menu-system', {
     let returnBtn = document.querySelector('#exit-to-menu-btn');
     let installBtn = document.querySelector('#install-app-button');
 
-    let toggleMatchState = (inGame) => {
-      window.gameState.gameStarted = inGame;
-      
-      // Control de interfaces del canvas
-      document.querySelector('#main-menu').setAttribute('visible', !inGame);
-      document.querySelector('#game-world').setAttribute('visible', inGame);
-      document.querySelector('#ingame-hud').setAttribute('visible', inGame);
-      
-      // SWAP VISUAL: Cambiar Mandos por Manos Reales sin romper los componentes
-      document.querySelector('#left-controller-mesh').setAttribute('visible', !inGame);
-      document.querySelector('#right-controller-mesh').setAttribute('visible', !inGame);
-      document.querySelector('#left-hand-mesh').setAttribute('visible', inGame);
-      document.querySelector('#right-hand-mesh').setAttribute('visible', inGame);
-
-      // Activar o congelar el puntero raycaster del menú de forma limpia
-      let rightHand = document.querySelector('#right-hand');
-      if (inGame) {
-        rightHand.setAttribute('raycaster', 'showLine: false; far: 0.01');
-        this.buildMannequinArena();
-      } else {
-        rightHand.setAttribute('raycaster', 'showLine: true; far: 12');
-        this.clearArena();
-      }
-    };
-
-    if (startBtn) startBtn.addEventListener('click', () => toggleMatchState(true));
-    if (sandboxBtn) sandboxBtn.addEventListener('click', () => toggleMatchState(true));
-    if (returnBtn) returnBtn.addEventListener('click', () => toggleMatchState(false));
+    if (startBtn) startBtn.addEventListener('click', () => this.toggleMatchState(true));
+    if (sandboxBtn) sandboxBtn.addEventListener('click', () => this.toggleMatchState(true));
+    if (returnBtn) returnBtn.addEventListener('click', () => this.toggleMatchState(false));
     
     if (installBtn) {
       installBtn.addEventListener('click', () => {
         installBtn.setAttribute('color', '#00ffcc');
-        alert("GitHub WebXR: ¡Juego descargado exitosamente en tu Home de Quest!");
+        // Comando útil para probar el auto-reload de forma manual desde las Quest:
+        localStorage.setItem('force_update_trigger', 'true');
+        alert("¡Ejecutando forzado de actualización! Guardando sesión y reiniciando...");
       });
+    }
+  },
+
+  toggleMatchState: function(inGame) {
+    window.gameState.gameStarted = inGame;
+    
+    document.querySelector('#main-menu').setAttribute('visible', !inGame);
+    document.querySelector('#game-world').setAttribute('visible', inGame);
+    document.querySelector('#ingame-hud').setAttribute('visible', inGame);
+    
+    document.querySelector('#left-controller-mesh').setAttribute('visible', !inGame);
+    document.querySelector('#right-controller-mesh').setAttribute('visible', !inGame);
+    document.querySelector('#left-hand-mesh').setAttribute('visible', inGame);
+    document.querySelector('#right-hand-mesh').setAttribute('visible', inGame);
+
+    let rightHand = document.querySelector('#right-hand');
+    if (inGame) {
+      rightHand.setAttribute('raycaster', 'objects: .none; far: 0.01'); // Apaga colisiones molestas del menú en juego
+      this.buildMannequinArena();
+    } else {
+      rightHand.setAttribute('raycaster', 'objects: [data-clickable], .raycastable; far: 12');
+      this.clearArena();
     }
   },
 
@@ -90,8 +148,7 @@ AFRAME.registerComponent('menu-system', {
     let weaponContainer = document.querySelector('#ground-weapons-container');
     this.clearArena();
 
-    // Spawnear 3 pistolas en el suelo
-    let weaponPositions = [{x: -1.5, z: -3.5}, {x: 2, z: -5}, {x: -0.5, z: -8}];
+    let weaponPositions = [{x: -1.2, z: -3}, {x: 1.8, z: -4.5}, {x: -0.5, z: -7}];
     weaponPositions.forEach((pos, i) => {
       let w = document.createElement('a-entity');
       w.setAttribute('class', 'raycastable ground-weapon');
@@ -102,8 +159,7 @@ AFRAME.registerComponent('menu-system', {
       window.gameState.groundWeapons.push(w);
     });
 
-    // Spawnear NPCs inteligentes de Mannequin
-    let npcPositions = [{x: -4, z: -10}, {x: 0, z: -13}, {x: 5, z: -9}];
+    let npcPositions = [{x: -3.5, z: -9}, {x: 0, z: -12}, {x: 4.5, z: -8}];
     npcPositions.forEach(pos => {
       let npc = document.createElement('a-entity');
       npc.setAttribute('mannequin-npc-ai', '');
@@ -125,17 +181,15 @@ AFRAME.registerComponent('menu-system', {
   }
 });
 
-// IA INTELIGENTE MANNEQUIN: Te persigue flanqueando únicamente si no lo estás mirando
 AFRAME.registerComponent('mannequin-npc-ai', {
   init: function() {
     let el = this.el;
     window.gameState.activeEnemies.push(el);
     
-    // Rig Humano Real
-    let head = document.createElement('a-sphere'); head.setAttribute('radius', '0.13'); head.setAttribute('position', '0 1.5 0'); head.setAttribute('color', '#a8a8a8'); el.appendChild(head);
-    let torso = document.createElement('a-cylinder'); torso.setAttribute('radius', '0.16'); torso.setAttribute('height', '0.6'); torso.setAttribute('position', '0 1.0 0'); torso.setAttribute('color', '#3a3a3a'); el.appendChild(torso);
-    let lLeg = document.createElement('a-cylinder'); lLeg.setAttribute('radius', '0.05'); lLeg.setAttribute('height', '0.6'); lLeg.setAttribute('position', '-0.08 0.4 0'); lLeg.setAttribute('color', '#222'); el.appendChild(lLeg);
-    let rLeg = document.createElement('a-cylinder'); rLeg.setAttribute('radius', '0.05'); rLeg.setAttribute('height', '0.6'); rLeg.setAttribute('position', '0.08 0.4 0'); rLeg.setAttribute('color', '#222'); el.appendChild(rLeg);
+    let head = document.createElement('a-sphere'); head.setAttribute('radius', '0.12'); head.setAttribute('position', '0 1.5 0'); head.setAttribute('color', '#a8a8a8'); el.appendChild(head);
+    let torso = document.createElement('a-cylinder'); torso.setAttribute('radius', '0.15'); torso.setAttribute('height', '0.58'); torso.setAttribute('position', '0 0.95 0'); torso.setAttribute('color', '#3a3a3a'); el.appendChild(torso);
+    let lLeg = document.createElement('a-cylinder'); lLeg.setAttribute('radius', '0.04'); lLeg.setAttribute('height', '0.55'); lLeg.setAttribute('position', '-0.07 0.38 0'); lLeg.setAttribute('color', '#222'); el.appendChild(lLeg);
+    let rLeg = document.createElement('a-cylinder'); rLeg.setAttribute('radius', '0.04'); rLeg.setAttribute('height', '0.55'); rLeg.setAttribute('position', '0.07 0.38 0'); rLeg.setAttribute('color', '#222'); el.appendChild(rLeg);
   },
   tick: function(time, timeDelta) {
     if (!window.gameState.gameStarted) return;
@@ -148,11 +202,11 @@ AFRAME.registerComponent('mannequin-npc-ai', {
     camDir.multiplyScalar(-1);
     
     let angle = camDir.angleTo(toNPC) * (180 / Math.PI);
-    let isPlayerLooking = angle < 55; // Campo de visión directo del Quest
+    let isPlayerLooking = angle < 50;
 
     if (!isPlayerLooking) {
       let dir = new THREE.Vector3(0, 0, 0).subVectors(new THREE.Vector3(0,0,0), npcObj.position).normalize();
-      npcObj.translateOnAxis(dir, 2.0 * (timeDelta / 1000));
+      npcObj.translateOnAxis(dir, 1.9 * (timeDelta / 1000));
       npcObj.position.y = 0;
     }
   }
