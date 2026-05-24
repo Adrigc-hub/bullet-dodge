@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>War of Mannequins: Ultimate Edition</title>
+    <title>Mannequin VR: Jujutsu Edition</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
@@ -12,89 +12,56 @@
   </head>
   <body>
 
-    <a-scene menu-system renderer="colorManagement: true; exposure: 1.3;">
+    <a-scene menu-system renderer="colorManagement: true; exposure: 1.2;">
       
-      <a-sky id="galaxy-dome" color="#03010a"></a-sky>
-      <a-entity light="type: ambient; color: #4e39a2; intensity: 1.5"></a-entity>
-      <a-entity light="type: directional; intensity: 2.0; color: #ffffff;" position="3 10 3"></a-entity>
+      <a-sky color="#05030f"></a-sky>
+      <a-entity light="type: ambient; color: #444; intensity: 1"></a-entity>
+      <a-entity light="type: directional; intensity: 1.5; color: #fff;" position="1 5 2"></a-entity>
 
-      <a-entity id="main-menu" position="0 1.4 -2.2">
-        <a-entity text="value: WAR OF MANNEQUINS; color: #00ffcc; align: center; width: 5.5;" position="0 0.8 0"></a-entity>
-        
-        <a-box id="start-button" class="raycastable" position="-0.6 0.2 0" scale="0.7 0.24 0.08" color="#ff0055" data-clickable>
-          <a-entity text="value: INICIAR JUEGO; color: #fff; align: center; width: 3.2;" position="0 0 0.05"></a-entity>
-        </a-box>
+      <a-entity id="mannequin-menu" position="0 1.5 -2">
+        <a-plane width="2.5" height="1.4" color="#001a33" material="opacity: 0.85; transparent: true; side: double">
+          
+          <a-entity text="value: MANNEQUIN; color: #fff; align: center; width: 6; font: roboto" position="0 0.5 0.01"></a-entity>
+          
+          <a-entity id="btn-play" class="raycastable" position="-0.8 0 0.02" geometry="primitive: plane; width: 0.6; height: 0.25" material="color: #00ffcc" data-clickable>
+             <a-entity text="value: QUICK PLAY; color: #000; align: center; width: 3" position="0 0 0.01"></a-entity>
+          </a-entity>
 
-        <a-box id="tutorial-button" class="raycastable" position="0.6 0.2 0" scale="0.7 0.24 0.08" color="#00ffcc" data-clickable>
-          <a-entity text="value: VER TUTORIAL; color: #000; align: center; width: 3.2;" position="0 0 0.05"></a-entity>
-        </a-box>
+          <a-entity id="btn-tutorial" class="raycastable" position="0.8 0 0.02" geometry="primitive: plane; width: 0.6; height: 0.25" material="color: #3366ff" data-clickable>
+             <a-entity text="value: TUTORIAL; color: #fff; align: center; width: 3" position="0 0 0.01"></a-entity>
+          </a-entity>
+
+          <a-plane width="2" height="0.3" color="#000" position="0 -0.4 0.01" material="opacity: 0.5">
+            <a-entity text="value: Jujutsu Tech Loaded - Mana: 100% - Energy: 100%; color: #00ffcc; align: center; width: 2.5" position="0 0 0.01"></a-entity>
+          </a-plane>
+        </a-plane>
       </a-entity>
 
-      <a-entity id="tutorial-panel" position="0 1.4 -2.2" visible="false">
-        <a-plane width="2.2" height="1.6" color="#09051c" material="opacity: 0.95; transparent: true">
-          <a-entity text="value: ACADEMIA HECHICERA - GUIA DE SUPERVIVENCIA; color: #00ffcc; align: center; width: 4.5;" position="0 0.65 0.01"></a-entity>
-          
-          <a-entity text="value: 1. ELIMINAR ENEMIGOS: Usa el Trigger derecho para disparar tu arma de agua bendita o lanzar hechizos de fuego con la varita.\n\n2. JUJUTSU (GOJO): Presiona X en la mano izquierda para lanzar Azul. Mantén presionado Y para concentrar el Rojo (tipo canica) y suéltalo para disparar.\n\n3. EL ACECHADOR SIGILOSO: Los maniquíes son inteligentes. Existe una variante que SOLO se mueve cuando le das la espalda. Se acerca lentamente ocultándose entre las sombras. Miralo fijamente para congelarlo y retrocede para mantener distancia.; color: #ffffff; width: 2.0; wrapCount: 42;" position="0 -0.05 0.01"></a-entity>
-          
-          <a-box id="close-tutorial-btn" class="raycastable" position="0 -0.65 0.02" scale="0.5 0.16 0.05" color="#ff0055" data-clickable>
-            <a-entity text="value: ENTENDIDO; color: #fff; align: center; width: 2.8;" position="0 0 0.03"></a-entity>
+      <a-entity id="tutorial-screen" position="0 1.5 -1.9" visible="false">
+        <a-plane width="2.2" height="1.3" color="#000" material="opacity: 0.95">
+          <a-entity text="value: GUIA DE MANNEQUIN\n\n1. Dispara con el Gatillo Derecho.\n2. Para usar el ROJO: Manten Y (Mano Izq) y suelta.\n3. El ACECHADOR: No le des la espalda, te atacara si no lo miras.\n4. Camuflaje: Los npcs se quedan quietos como estatuas.; color: #fff; align: center; width: 2.5" position="0 0.1 0.01"></a-entity>
+          <a-box id="btn-close-tut" class="raycastable" position="0 -0.45 0.02" scale="0.4 0.15 0.01" color="#ff0055" data-clickable>
+            <a-entity text="value: CERRAR; color: #fff; align: center; width: 3" position="0 0 0.01"></a-entity>
           </a-box>
         </a-plane>
       </a-entity>
 
-      <a-entity id="ingame-hud" position="0 2.4 -3.0" visible="false">
-        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.5 0.18 0.05" color="#111" data-clickable>
-          <a-entity text="value: VOLVER; color: #ff0055; align: center; width: 3" position="0 0 0.03"></a-entity>
-        </a-box>
-        <a-entity id="hud-energy-text" text="value: ENERGIA MALDITA: 100%; color: #00ffcc; width: 3;" position="-1.2 -0.3 0"></a-entity>
-        <a-entity id="hud-mana-text" text="value: MANA: 100%; color: #ff00aa; width: 3;" position="0.6 -0.3 0"></a-entity>
-      </a-entity>
-
       <a-entity id="game-world" visible="false">
-        <a-grid color="#1a0c3a" width="50" height="50" opacity="0.5"></a-grid>
-        <a-box position="0 3 -12" scale="20 6 0.5" color="#060312"></a-box>
-        <a-box position="-10 3 -4" scale="0.5 6 16" color="#060312"></a-box>
-        <a-box position="10 3 -4" scale="0.5 6 16" color="#060312"></a-box>
-
-        <a-entity id="ground-weapons-container"></a-entity>
+        <a-grid color="#111" width="50" height="50"></a-grid>
         <a-entity id="enemy-container"></a-entity>
+        <a-entity id="ground-weapons-container"></a-entity>
       </a-entity>
 
-      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.25">
+      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.2">
         <a-entity camera position="0 1.6 0" look-controls></a-entity>
 
-        <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-left-skills wizard-wand-system>
-          <a-entity id="left-controller-mesh" oculus-render-model="hand: left"></a-entity>
-          <a-entity id="left-hand-mesh" visible="false">
-            <a-sphere radius="0.03" color="#ff0055" material="opacity: 0.5; transparent: true"></a-sphere>
-          </a-entity>
-          
-          <a-entity id="wizard-wand-visual" position="0 0.02 -0.05" rotation="20 0 0" visible="false">
-            <a-cone radius-bottom="0.01" radius-top="0.002" height="0.3" color="#3d230d">
-              <a-sphere position="0 0.15 0" radius="0.018" color="#ff00aa"></a-sphere>
-            </a-cone>
-          </a-entity>
-        </a-entity>
+        <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-left-skills></a-entity>
 
         <a-entity id="right-hand" oculus-touch-controls="hand: right" vr-weapon-handler
-                  raycaster="objects: [data-clickable], .raycastable; showLine: true; far: 10; interval: 40;"
+                  raycaster="objects: .raycastable; showLine: true; far: 10; interval: 20;"
                   line="color: #00ffcc; opacity: 0.8">
-          
-          <a-entity id="right-controller-mesh" oculus-render-model="hand: right"></a-entity>
-          <a-entity id="right-hand-mesh" visible="false">
-            <a-sphere radius="0.03" color="#00ffcc" material="opacity: 0.5; transparent: true"></a-sphere>
-          </a-entity>
-
-          <a-entity id="gojo-infinity-shield" position="0 0 0" visible="false">
-            <a-sphere radius="0.08" color="#00aaff" material="wireframe: true; opacity: 0.2"></a-sphere>
-          </a-entity>
-
-          <a-entity id="player-weapon-visual" position="0 0.06 -0.04" rotation="0 180 0" visible="false">
-            <a-cylinder radius="0.02" height="0.14" rotation="90 0 0" color="#dddddd"></a-cylinder>
-            <a-box position="0 -0.06 0" scale="0.02 0.08 0.02" color="#00ddff"></a-box>
-          </a-entity>
+          <a-sphere radius="0.03" color="#00ffcc" material="opacity: 0.5; transparent: true"></a-sphere>
         </a-entity>
-
       </a-entity>
     </a-scene>
 
