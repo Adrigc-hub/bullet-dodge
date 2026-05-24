@@ -9,65 +9,7 @@ window.gameState = {
   spellsCastCount: 0
 };
 
-const CODE_VERSION = "1.5.0"; // Actualizado
-
-window.HotReloader = {
-  checkUpdates: function() {
-    if(window.gameState.gameStarted) {
-      localStorage.setItem('quest_wizard_backup', JSON.stringify({
-        energy: window.gameState.energy,
-        mana: window.gameState.mana,
-        inGame: true
-      }));
-    }
-
-    setInterval(() => {
-      if (localStorage.getItem('force_update_trigger') === 'true') {
-        localStorage.removeItem('force_update_trigger');
-        this.executeReconnectionSequence();
-      }
-    }, 2000);
-  },
-
-  executeReconnectionSequence: function() {
-    let screen = document.getElementById('hot-reload-screen');
-    if(screen) screen.classList.add('active'); 
-
-    setTimeout(() => {
-      window.location.reload(); 
-    }, 1000);
-  },
-
-  recoverSession: function() {
-    let backup = localStorage.getItem('quest_wizard_backup');
-    if(backup) {
-      let data = JSON.parse(backup);
-      localStorage.removeItem('quest_wizard_backup');
-      
-      setTimeout(() => {
-        let menuComp = document.querySelector('[menu-system]').components['menu-system'];
-        if(menuComp) {
-          window.gameState.energy = data.energy;
-          window.gameState.mana = data.mana;
-          menuComp.toggleMatchState(true);
-        }
-      }, 500);
-    }
-  }
-};
-
-window.addEventListener('DOMContentLoaded', () => {
-  window.HotReloader.checkUpdates();
-  window.HotReloader.recoverSession();
-
-  // Asegurar compatibilidad WebXR: desvanecer la pantalla de carga del DOM plano si ya entró a VR
-  let sceneEl = document.querySelector('a-scene');
-  sceneEl.addEventListener('enter-vr', () => {
-    let screen = document.getElementById('hot-reload-screen');
-    if(screen) screen.classList.remove('active');
-  });
-});
-
+// Generador de audio procedural para efectos sin retardo
 window.GameAudio = {
   ctx: null,
   play: function(type) {
@@ -80,20 +22,16 @@ window.GameAudio = {
     let t = this.ctx.currentTime;
 
     if (type === 'shoot') {
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(480, t);
-      osc.frequency.exponentialRampToValueAtTime(40, t + 0.09);
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(440, t);
+      osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
       gain.gain.setValueAtTime(0.2, t); osc.start(t); osc.stop(t + 0.1);
-    } else if (type === 'charge_red') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(95, t);
-      osc.frequency.linearRampToValueAtTime(580, t + 1.5);
-      gain.gain.setValueAtTime(0.18, t); osc.start(t); osc.stop(t + 1.55);
-    } else if (type === 'purple_nuke') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(260, t);
-      osc.frequency.exponentialRampToValueAtTime(15, t + 0.5);
-      gain.gain.setValueAtTime(0.55, t); osc.start(t); osc.stop(t + 0.52);
+    } else if (type === 'charge') {
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t);
+      osc.frequency.linearRampToValueAtTime(600, t + 1.5);
+      gain.gain.setValueAtTime(0.15, t); osc.start(t); osc.stop(t + 1.5);
     } else if (type === 'fireball') {
-      osc.type = 'square'; osc.frequency.setValueAtTime(300, t);
-      osc.frequency.linearRampToValueAtTime(90, t + 0.18);
+      osc.type = 'square'; osc.frequency.setValueAtTime(280, t);
+      osc.frequency.linearRampToValueAtTime(80, t + 0.2);
       gain.gain.setValueAtTime(0.2, t); osc.start(t); osc.stop(t + 0.2);
     }
   }
@@ -102,19 +40,24 @@ window.GameAudio = {
 AFRAME.registerComponent('menu-system', {
   init: function () {
     let startBtn = document.querySelector('#start-button');
-    let sandboxBtn = document.querySelector('#sandbox-button');
+    let tutorialBtn = document.querySelector('#tutorial-button');
+    let closeTutorialBtn = document.querySelector('#close-tutorial-btn');
     let returnBtn = document.querySelector('#exit-to-menu-btn');
-    let installBtn = document.querySelector('#install-app-button');
 
     if (startBtn) startBtn.addEventListener('click', () => this.toggleMatchState(true));
-    if (sandboxBtn) sandboxBtn.addEventListener('click', () => this.toggleMatchState(true));
     if (returnBtn) returnBtn.addEventListener('click', () => this.toggleMatchState(false));
     
-    if (installBtn) {
-      installBtn.addEventListener('click', () => {
-        installBtn.setAttribute('color', '#00ffcc');
-        localStorage.setItem('force_update_trigger', 'true');
-        alert("¡Ejecutando forzado de actualización! Guardando sesión y reiniciando...");
+    if (tutorialBtn) {
+      tutorialBtn.addEventListener('click', () => {
+        document.querySelector('#main-menu').setAttribute('visible', false);
+        document.querySelector('#tutorial-panel').setAttribute('visible', true);
+      });
+    }
+
+    if (closeTutorialBtn) {
+      closeTutorialBtn.addEventListener('click', () => {
+        document.querySelector('#tutorial-panel').setAttribute('visible', false);
+        document.querySelector('#main-menu').setAttribute('visible', true);
       });
     }
   },
@@ -133,10 +76,10 @@ AFRAME.registerComponent('menu-system', {
 
     let rightHand = document.querySelector('#right-hand');
     if (inGame) {
-      rightHand.setAttribute('raycaster', 'objects: .none; far: 0.01'); 
+      rightHand.setAttribute('raycaster', 'objects: .none; far: 0.01'); // Apagar puntero láser molesto al combatir
       this.buildMannequinArena();
     } else {
-      rightHand.setAttribute('raycaster', 'objects: [data-clickable], .raycastable; far: 12');
+      rightHand.setAttribute('raycaster', 'objects: [data-clickable], .raycastable; far: 10');
       this.clearArena();
     }
   },
@@ -146,8 +89,9 @@ AFRAME.registerComponent('menu-system', {
     let weaponContainer = document.querySelector('#ground-weapons-container');
     this.clearArena();
 
-    let weaponPositions = [{x: -1.2, z: -3}, {x: 1.8, z: -4.5}, {x: -0.5, z: -7}];
-    weaponPositions.forEach((pos, i) => {
+    // Spawn de armas (Estilo Mannequin original)
+    let weaponPositions = [{x: -1, z: -3}, {x: 2, z: -5}];
+    weaponPositions.forEach(pos => {
       let w = document.createElement('a-entity');
       w.setAttribute('class', 'raycastable ground-weapon');
       w.setAttribute('position', `${pos.x} 0.1 ${pos.z}`);
@@ -157,11 +101,17 @@ AFRAME.registerComponent('menu-system', {
       window.gameState.groundWeapons.push(w);
     });
 
-    let npcPositions = [{x: -3.5, z: -9}, {x: 0, z: -12}, {x: 4.5, z: -8}];
-    npcPositions.forEach(pos => {
+    // Spawn de enemigos variantes (Estándar y el Acechador Sigiloso inteligente)
+    let npcPositions = [
+      {x: -3, z: -8, type: 'standard'},
+      {x: 0, z: -11, type: 'stalker'}, // ¡Esta es la variante difícil que se esconde y te caza de espaldas!
+      {x: 4, z: -7, type: 'standard'}
+    ];
+    
+    npcPositions.forEach(config => {
       let npc = document.createElement('a-entity');
-      npc.setAttribute('mannequin-npc-ai', '');
-      npc.setAttribute('position', `${pos.x} 0 ${pos.z}`);
+      npc.setAttribute('mannequin-npc-ai', {behavior: config.type});
+      npc.setAttribute('position', `${config.x} 0 ${config.z}`);
       enemyContainer.appendChild(npc);
     });
   },
@@ -179,15 +129,19 @@ AFRAME.registerComponent('menu-system', {
   }
 });
 
+// IA DE COMPORTAMIENTO INTELIGENTE DE LOS MANIQUÍES
 AFRAME.registerComponent('mannequin-npc-ai', {
+  schema: { behavior: {type: 'string', default: 'standard'} },
   init: function() {
     let el = this.el;
     window.gameState.activeEnemies.push(el);
     
-    let head = document.createElement('a-sphere'); head.setAttribute('radius', '0.12'); head.setAttribute('position', '0 1.5 0'); head.setAttribute('color', '#a8a8a8'); el.appendChild(head);
-    let torso = document.createElement('a-cylinder'); torso.setAttribute('radius', '0.15'); torso.setAttribute('height', '0.58'); torso.setAttribute('position', '0 0.95 0'); torso.setAttribute('color', '#3a3a3a'); el.appendChild(torso);
-    let lLeg = document.createElement('a-cylinder'); lLeg.setAttribute('radius', '0.04'); lLeg.setAttribute('height', '0.55'); lLeg.setAttribute('position', '-0.07 0.38 0'); lLeg.setAttribute('color', '#222'); el.appendChild(lLeg);
-    let rLeg = document.createElement('a-cylinder'); rLeg.setAttribute('radius', '0.04'); rLeg.setAttribute('height', '0.55'); rLeg.setAttribute('position', '0.07 0.38 0'); rLeg.setAttribute('color', '#222'); el.appendChild(rLeg);
+    // Apariencia geométrica limpia de maniquí
+    let colorManiqui = this.data.behavior === 'stalker' ? '#555566' : '#a8a8a8'; // El acechador es más oscuro
+    let head = document.createElement('a-sphere'); head.setAttribute('radius', '0.12'); head.setAttribute('position', '0 1.5 0'); head.setAttribute('color', colorManiqui); el.appendChild(head);
+    let torso = document.createElement('a-cylinder'); torso.setAttribute('radius', '0.14'); torso.setAttribute('height', '0.55'); torso.setAttribute('position', '0 0.95 0'); torso.setAttribute('color', '#333333'); el.appendChild(torso);
+    let lLeg = document.createElement('a-cylinder'); lLeg.setAttribute('radius', '0.04'); lLeg.setAttribute('height', '0.5'); lLeg.setAttribute('position', '-0.06 0.35 0'); lLeg.setAttribute('color', '#111'); el.appendChild(lLeg);
+    let rLeg = document.createElement('a-cylinder'); rLeg.setAttribute('radius', '0.04'); rLeg.setAttribute('height', '0.5'); rLeg.setAttribute('position', '0.06 0.35 0'); rLeg.setAttribute('color', '#111'); el.appendChild(rLeg);
   },
   tick: function(time, timeDelta) {
     if (!window.gameState.gameStarted) return;
@@ -197,14 +151,24 @@ AFRAME.registerComponent('mannequin-npc-ai', {
     
     let toNPC = new THREE.Vector3().subVectors(npcObj.position, playerCam.position).normalize();
     let camDir = new THREE.Vector3(); playerCam.getWorldDirection(camDir);
-    camDir.multiplyScalar(-1);
+    camDir.multiplyScalar(-1); // Invertir vector de cámara nativo
     
     let angle = camDir.angleTo(toNPC) * (180 / Math.PI);
-    let isPlayerLooking = angle < 50;
+    let isPlayerLooking = angle < 55; // Campo de visión de detección del jugador
 
-    if (!isPlayerLooking) {
-      let dir = new THREE.Vector3(0, 0, 0).subVectors(new THREE.Vector3(0,0,0), npcObj.position).normalize();
-      npcObj.translateOnAxis(dir, 1.9 * (timeDelta / 1000));
+    // LÓGICA DE MANNEQUIN CRUCIAL:
+    if (this.data.behavior === 'stalker') {
+      // El acechador sigiloso avanzado: Solo avanza si NO lo estás mirando.
+      if (!isPlayerLooking) {
+        let dir = new THREE.Vector3().subVectors(playerCam.position, npcObj.position).normalize();
+        npcObj.translateOnAxis(dir, 1.4 * (timeDelta / 1000)); // Movimiento sigiloso y constante
+        npcObj.position.y = 0; // Mantener los pies pegados al piso
+      }
+    } else {
+      // Maniquí estándar: Te persigue de todas formas pero frena levemente al contacto visual
+      let speed = isPlayerLooking ? 0.4 : 1.8;
+      let dir = new THREE.Vector3().subVectors(playerCam.position, npcObj.position).normalize();
+      npcObj.translateOnAxis(dir, speed * (timeDelta / 1000));
       npcObj.position.y = 0;
     }
   }
