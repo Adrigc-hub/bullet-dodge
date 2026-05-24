@@ -1,0 +1,35 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #020105;
+}
+/* Forzar que la escena 3D ocupe todo el espacio */
+a-scene {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  top: 0; left: 0;
+}
+/* Pantalla de carga estilo War of Wizards */
+#loading-screen {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle, #0f0c24 0%, #04020a 100%);
+  z-index: 99999; display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  color: #00ffcc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: opacity 0.8s ease-in-out;
+}
+.magic-loader {
+  width: 80px; height: 80px;
+  border: 4px solid transparent;
+  border-top-color: #ff0055; border-bottom-color: #00ffcc;
+  border-radius: 50%; animation: spinMagic 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+}
+@keyframes spinMagic { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
