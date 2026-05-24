@@ -1,36 +1,50 @@
-// Variable global para capturar el evento de instalación del navegador
-let deferredPrompt;
+window.gameState = {
+  timeScale: 1.0,
+  score: 0,
+  hasWeapon: false,
+  gameStarted: false,
+  isNearMenuGun: false
+};
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  // Evita que el navegador intente mostrar su propio aviso feo automáticamente
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Hacer visible o resaltar el botón de instalación ya que el dispositivo es compatible
-  let btnText = document.querySelector('#install-btn-text');
-  if(btnText) btnText.setAttribute('text', 'value: INSTALAR APLICACIÓN AHORA; color: #000; align: center; width: 2.6');
+AFRAME.registerComponent('control-fix', {
+  init: function () {
+    let sceneEl = this.el.sceneEl;
+    let rightHand = document.querySelector('#right-hand');
+
+    // Desactivar el rayo láser de selección automática en cuanto empiece el juego para que no estorbe
+    sceneEl.addEventListener('enter-vr', () => {
+      document.querySelector('#rig').setAttribute('movement-controls', 'controls: gamepad; speed: 0.20');
+    });
+
+    // Detectar si la mano de la pistola está físicamente sobre el arma del menú
+    rightHand.addEventListener('hitstart', (e) => {
+      if (e.detail.el.id === 'menu-gun') { window.gameState.isNearMenuGun = true; }
+    });
+    rightHand.addEventListener('hitend', () => { window.gameState.isNearMenuGun = false; });
+  }
 });
 
-AFRAME.registerComponent('installer-system', {
+AFRAME.registerComponent('menu-system', {
   init: function () {
-    let installBtn = document.querySelector('#install-app-button');
+    let startBtn = document.querySelector('#start-button');
+    let sandboxBtn = document.querySelector('#sandbox-button');
+
+    // El láser lanza eventos de tipo 'click'. Al recibirlos, cambiamos de fase.
+    if(startBtn) startBtn.addEventListener('click', () => { this.startGame(); });
+    if(sandboxBtn) sandboxBtn.addEventListener('click', () => { this.startGame(); });
+  },
+  startGame: function() {
+    window.gameState.gameStarted = true;
     
-    if(installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-          // Lanzar la ventana emergente oficial de instalación dentro de las Quest / Celular
-          deferredPrompt.prompt();
-          
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            document.querySelector('#install-btn-text').setAttribute('text', 'value: ¡INSTALADO CON ÉXITO!; color: #00ff00; align: center; width: 2.6');
-          }
-          deferredPrompt = null;
-        } else {
-          // Si ya está instalado o entraste directo desde el navegador sin compatibilidad temporal
-          alert("Para instalar: Si estás en Quest Browser, haz clic en el icono de los '3 puntos' en la barra del navegador de arriba y selecciona 'Añadir a Aplicaciones'. ¡Listo!");
-        }
-      });
-    }
+    // Apagar el rayo láser visual del control derecho al iniciar el combate
+    document.querySelector('#right-hand').setAttribute('raycaster', 'showLine: false; far: 0');
+    
+    let menu = document.querySelector('#main-menu');
+    let rearMenu = document.querySelector('#rear-menu');
+    menu.setAttribute('visible', 'false');
+    rearMenu.setAttribute('visible', 'false');
+    
+    document.querySelector('#game-elements').setAttribute('visible', 'true');
+    document.querySelector('#enemy-target').emit('spawn');
   }
 });
