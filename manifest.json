@@ -1,9 +1,9 @@
 {
-  "short_name": "WarManequins",
-  "name": "War of Manequins: Infinite Magic",
+  "short_name": "WarOfWizards",
+  "name": "War of Mannequins: Jujutsu Wizardry",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=GojoSpaceX",
+      "src": "https://api.dicebear.com/7.x/bottts/svg?seed=GojoGrip",
       "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any maskable"
