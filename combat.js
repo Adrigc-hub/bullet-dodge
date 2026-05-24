@@ -1,17 +1,15 @@
-// CONTROLADOR DE DISPARO Y RECOGER ARMAS EN PARTIDA (MANO DERECHA)
 AFRAME.registerComponent('vr-weapon-handler', {
   init: function() {
     let el = this.el;
     
     el.addEventListener('gripdown', () => {
       if(!window.gameState.gameStarted || window.gameState.hasWeapon) return;
-      
       let handPos = new THREE.Vector3(); el.object3D.getWorldPosition(handPos);
       
       window.gameState.groundWeapons.forEach(w => {
         if(w && w.object3D) {
           let wPos = new THREE.Vector3(); w.object3D.getWorldPosition(wPos);
-          if(handPos.distanceTo(wPos) < 0.65) {
+          if(handPos.distanceTo(wPos) < 0.6) {
             window.gameState.hasWeapon = true;
             w.setAttribute('visible', 'false');
             document.querySelector('#player-weapon-visual').setAttribute('visible', 'true');
@@ -25,12 +23,6 @@ AFRAME.registerComponent('vr-weapon-handler', {
       if(!window.gameState.hasWeapon || !window.gameState.gameStarted) return;
       window.GameAudio.play('shoot');
       
-      // Efecto físico de retroceso en la mano virtual
-      let visualGun = document.querySelector('#player-weapon-visual');
-      visualGun.setAttribute('position', '0 0.07 0.0');
-      setTimeout(() => { visualGun.setAttribute('position', '0 0.07 -0.04'); }, 70);
-
-      // Bala de agua
       let b = document.createElement('a-entity');
       let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
       this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
@@ -44,83 +36,99 @@ AFRAME.registerComponent('vr-weapon-handler', {
   }
 });
 
-// ================= JUJUTSU TÉCNICAS REVERSALES: HECHIZOS CRUZADOS (MANO IZQUIERDA) =================
+// ================= GESTIÓN LIMPIA DE HECHIZOS CRUZADOS DE GOJO =================
 AFRAME.registerComponent('gojo-left-skills', {
   init: function() {
     this.isChargingRed = false;
     this.chargeTimer = 0;
-    this.lightningSys = document.querySelector('#red-lightning-system');
-    this.core = document.querySelector('#red-core');
+    this.activeChargeGroup = null;
 
-    // BOTÓN X: Invoca Orbe Azul de Atracción Estática (Gasta 49 de Energía)
     this.el.addEventListener('xbuttondown', () => {
       if(window.gameState.hasWeapon || !window.gameState.gameStarted || window.gameState.energy < 49) return;
-      this.fireBlueOrb(false); // Azul Estático (Dura 5s)
+      this.fireBlueOrb(false);
     });
 
-    // GRIP IZQUIERDO: Orbe Vórtice que jala maniquíes hacia el centro (Gasta 51 de Energía)
     this.el.addEventListener('gripdown', () => {
       if(!window.gameState.hasWeapon && window.gameState.gameStarted && window.gameState.energy >= 51) {
-        this.fireBlueOrb(true); // Variante Vórtice Atractor
+        this.fireBlueOrb(true);
       }
     });
 
-    // BOTÓN Y: Iniciar los 3 Rayos Cinemáticos de Carga del Rojo (Gasta 49 de Energía)
+    // SISTEMA MEJORADO: Generación procedural dinámica del Rojo para evitar colisiones estáticas basura
     this.el.addEventListener('ybuttondown', () => {
       if(window.gameState.hasWeapon || window.gameState.energy < 49 || !window.gameState.gameStarted) return;
       this.isChargingRed = true;
       this.chargeTimer = 0;
       window.GameAudio.play('charge_red');
-      
-      // ANIMACIÓN FIEL DEL ANIME: Empieza del aire (invisible), los 3 rayos helicoidales convergen girando salvajemente
-      this.lightningSys.setAttribute('visible', 'true');
-      this.core.setAttribute('material', 'opacity: 0.95; color: #ff0022;');
-      this.core.setAttribute('scale', '0.1 0.1 0.1'); // Empieza del tamaño de un átomo
+
+      // Crear grupo contenedor del efecto temporal
+      this.activeChargeGroup = document.createElement('a-entity');
+      this.activeChargeGroup.setAttribute('position', '0 0.05 -0.12');
+      this.el.appendChild(this.activeChargeGroup);
+
+      // Crear los 3 rayos helicoidales estilo anime
+      for(let i=1; i<=3; i++) {
+        let ray = document.createElement('a-cylinder');
+        ray.setAttribute('id', 'dynamic-ray-' + i);
+        ray.setAttribute('radius', '0.005');
+        ray.setAttribute('height', '0.25');
+        ray.setAttribute('color', i===1 ? '#ff0000' : (i===2 ? '#ff0055' : '#ffaa00'));
+        ray.setAttribute('material', 'shader: flat');
+        this.activeChargeGroup.appendChild(ray);
+      }
+
+      // Núcleo minúsculo que empieza desde el aire
+      this.dynamicCore = document.createElement('a-sphere');
+      this.dynamicCore.setAttribute('radius', '0.01');
+      this.dynamicCore.setAttribute('color', '#ff0033');
+      this.dynamicCore.setAttribute('material', 'shader: flat');
+      this.activeChargeGroup.appendChild(this.dynamicCore);
     });
 
     this.el.addEventListener('ybuttonup', () => {
       if(this.isChargingRed) {
         this.isChargingRed = false;
-        this.lightningSys.setAttribute('visible', 'false');
         
+        // Remover el contenedor del mapa para liberar la colisión del raycaster de inmediato
+        if(this.activeChargeGroup && this.activeChargeGroup.parentNode) {
+          this.activeChargeGroup.parentNode.removeChild(this.activeChargeGroup);
+        }
+
         if(this.chargeTimer >= 1.5) {
           window.gameState.energy -= 49;
-          this.updateHUDValues();
-          this.launchRedCanica(); // Comprimido al tamaño de una canica hiperconcentrada
-        } else {
-          this.core.setAttribute('material', 'opacity: 0');
+          document.querySelector('#hud-energy-text').setAttribute('text', 'value: ENERGIA MALDITA: ' + Math.max(0, window.gameState.energy) + '%;');
+          this.launchRedCanica();
         }
       }
     });
   },
 
   tick: function(time, timeDelta) {
-    if(this.isChargingRed) {
+    if(this.isChargingRed && this.activeChargeGroup) {
       this.chargeTimer += timeDelta / 1000;
       
-      // Control de los 3 rayos girando en círculos convergentes hacia el centro
-      let r1 = document.querySelector('#ray-1');
-      let r2 = document.querySelector('#ray-2');
-      let r3 = document.querySelector('#ray-3');
-      let speedRot = time * 0.008;
+      let r1 = this.activeChargeGroup.querySelector('#dynamic-ray-1');
+      let r2 = this.activeChargeGroup.querySelector('#dynamic-ray-2');
+      let r3 = this.activeChargeGroup.querySelector('#dynamic-ray-3');
+      let speedRot = time * 0.009;
       
-      r1.setAttribute('position', `${Math.sin(speedRot)*0.12} 0.05 ${Math.cos(speedRot)*0.12}`);
-      r2.setAttribute('position', `${Math.sin(speedRot + 2)*0.12} 0.05 ${Math.cos(speedRot + 2)*0.12}`);
-      r3.setAttribute('position', `${Math.sin(speedRot + 4)*0.12} 0.05 ${Math.cos(speedRot + 4)*0.12}`);
+      // Los 3 rayos giran contrayéndose hacia el centro de forma impecable
+      let radiusOffset = Math.max(0.02, 0.15 - (this.chargeTimer * 0.08));
+      if(r1) r1.setAttribute('position', `${Math.sin(speedRot)*radiusOffset} 0 ${Math.cos(speedRot)*radiusOffset}`);
+      if(r2) r2.setAttribute('position', `${Math.sin(speedRot + 2)*radiusOffset} 0 ${Math.cos(speedRot + 2)*radiusOffset}`);
+      if(r3) r3.setAttribute('position', `${Math.sin(speedRot + 4)*radiusOffset} 0 ${Math.cos(speedRot + 4)*radiusOffset}`);
       
-      // Crece brevemente y se comprime instantáneamente a canica blanca incandescente
-      if(this.chargeTimer > 0.9) {
-        this.core.setAttribute('scale', '0.3 0.3 0.3');
-        this.core.setAttribute('material', 'color: #ffffff; emissive: #ff0033;');
-      } else {
-        this.core.setAttribute('scale', '1.5 1.5 1.5');
+      // Animación de tamaño canica hiperconcentrada
+      if(this.chargeTimer > 0.8 && this.dynamicCore) {
+        this.dynamicCore.setAttribute('radius', '0.03');
+        this.dynamicCore.setAttribute('material', 'color: #ffffff; emissive: #ff0033;');
       }
     }
   },
 
   fireBlueOrb: function(isVortex) {
     window.gameState.energy -= isVortex ? 51 : 49;
-    this.updateHUDValues();
+    document.querySelector('#hud-energy-text').setAttribute('text', 'value: ENERGIA MALDITA: ' + Math.max(0, window.gameState.energy) + '%;');
 
     let blue = document.createElement('a-entity');
     let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
@@ -140,27 +148,21 @@ AFRAME.registerComponent('gojo-left-skills', {
     let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
     this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
     
-    red.setAttribute('geometry', {primitive: 'sphere', radius: 0.04}); // Tamaño exacto de una canica de plasma
+    red.setAttribute('geometry', {primitive: 'sphere', radius: 0.04});
     red.setAttribute('material', {color: '#ff0033', shader: 'flat'});
     red.setAttribute('position', pos);
     dir.multiplyScalar(-1);
     
     red.setAttribute('bullet-runtime', {dx: dir.x, dy: dir.y, dz: dir.z, type: 'red'});
     this.el.sceneEl.appendChild(red);
-  },
-
-  updateHUDValues: function() {
-    document.querySelector('#hud-energy-text').setAttribute('text', 'value: ENERGIA MALDITA: ' + Math.max(0, window.gameState.energy) + '%;');
   }
 });
 
-// ================= SISTEMA INTEGRADO DE WAR OF WIZARDS (SISTEMA DE MANÁ Y HECHIZOS) =================
+// ================= WAR OF WIZARDS: MANÁ Y BOLA DE FUEGO PROCEDURAL =================
 AFRAME.registerComponent('wizard-wand-system', {
   init: function() {
-    let el = this.el;
     this.wandVisual = document.querySelector('#wizard-wand-visual');
 
-    // Invocación: Grip Izquierdo + Botón Y manteniendo la mano libre
     this.el.addEventListener('gripdown', () => {
       if(!window.gameState.hasWeapon && window.gameState.mana >= 100 && !window.gameState.wandEquipped && window.gameState.gameStarted) {
         window.gameState.wandEquipped = true;
@@ -169,7 +171,6 @@ AFRAME.registerComponent('wizard-wand-system', {
       }
     });
 
-    // Trigger de la mano izquierda dibuja y dispara el hechizo de bola de fuego
     this.el.addEventListener('triggerdown', () => {
       if(!window.gameState.wandEquipped) return;
 
@@ -193,7 +194,7 @@ AFRAME.registerComponent('wizard-wand-system', {
     let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
     this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
     
-    fb.setAttribute('geometry', {primitive: 'sphere', radius: 0.16});
+    fb.setAttribute('geometry', {primitive: 'sphere', radius: 0.15});
     fb.setAttribute('material', {color: '#ffaa00', emissive: '#ff3300'});
     fb.setAttribute('position', pos);
     dir.multiplyScalar(-1);
@@ -203,7 +204,7 @@ AFRAME.registerComponent('wizard-wand-system', {
   }
 });
 
-// ================= FÍSICA DE PROYECTILES, MOVIMIENTO Y COLISIONES CRUZADAS =================
+// ================= RUNTIME DE COMPORTAMIENTO DE BALAS DE COMBATE =================
 AFRAME.registerComponent('bullet-runtime', {
   schema: { dx: {type:'number'}, dy: {type:'number'}, dz: {type:'number'}, type: {type:'string'} },
   init: function() {
@@ -214,16 +215,14 @@ AFRAME.registerComponent('bullet-runtime', {
     let obj = this.el.object3D;
     this.timer += timeDelta / 1000;
 
-    // LÓGICA DE AZUL ESTÁTICO: Queda suspendido en el espacio por 5 segundos
     if (this.isStaticBlue) {
-      if(this.timer < 0.25) {
+      if(this.timer < 0.2) {
         obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), 12 * (timeDelta / 1000));
       }
       if(this.timer >= 5.0) {
         if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
         return;
       }
-      // COLISIÓN DE HECHIZOS: Si le pegas con un Rojo a este Azul se genera el Vacío Púrpura Estilo Nuke
       let projectiles = document.querySelectorAll('[bullet-runtime]');
       projectiles.forEach(p => {
         if(p !== this.el && p.components['bullet-runtime'].data.type === 'red') {
@@ -237,7 +236,6 @@ AFRAME.registerComponent('bullet-runtime', {
       return;
     }
 
-    // AZUL DE ATRACCIÓN (VÓRTICE): Succiona a los maniquíes cercanos
     if (this.data.type === 'blue_vortex') {
       obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), 9 * (timeDelta / 1000));
       window.gameState.activeEnemies.forEach(e => {
@@ -251,11 +249,10 @@ AFRAME.registerComponent('bullet-runtime', {
       obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), speed * (timeDelta / 1000));
     }
 
-    // Daño directo a enemigos
     let enemies = window.gameState.activeEnemies;
     for(let i = enemies.length - 1; i >= 0; i--) {
       let e = enemies[i];
-      if(e && e.object3D && obj.position.distanceTo(e.object3D.position) < 1.3) {
+      if(e && e.object3D && obj.position.distanceTo(e.object3D.position) < 1.2) {
         if(e.parentNode) e.parentNode.removeChild(e);
         enemies.splice(i, 1);
         if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
@@ -263,7 +260,7 @@ AFRAME.registerComponent('bullet-runtime', {
       }
     }
 
-    if(this.timer > 5.5 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    if(this.timer > 5.0 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
   },
 
   detonatePurpleNuke: function(impactPos) {
