@@ -1,207 +1,291 @@
-// COMPONENTE PARA CREAR ENEMIGOS CON FORMA HUMANA (NPCs)
-AFRAME.registerComponent('human-npc-behavior', {
-  init: function () {
+// CONTROLADOR DE ARMAS (MANO DERECHA)
+AFRAME.registerComponent('vr-weapon-handler', {
+  init: function() {
     let el = this.el;
-    window.gameState.activeEnemies.push(el);
+    
+    el.addEventListener('gripdown', () => {
+      if(!window.gameState.gameStarted) return;
+      // Recoger armas del suelo por proximidad táctica
+      let handPos = new THREE.Vector3(); el.object3D.getWorldPosition(handPos);
+      
+      window.gameState.groundWeapons.forEach(w => {
+        if(w && w.object3D) {
+          let wPos = new THREE.Vector3(); w.object3D.getWorldPosition(wPos);
+          if(handPos.distanceTo(wPos) < 0.6 && !window.gameState.hasWeapon) {
+            window.gameState.hasWeapon = true;
+            w.setAttribute('visible', 'false');
+            document.querySelector('#player-weapon-visual').setAttribute('visible', 'true');
+            document.querySelector('#gojo-infinity-shield').setAttribute('visible', 'true'); // Infinito condicional activo
+          }
+        }
+      });
+    });
 
-    // --- CONSTRUCCIÓN PROCEDURAL DE MODELO HUMANO (Tronco, Cabeza, Brazos, Piernas) ---
-    // Cabeza
-    let head = document.createElement('a-sphere');
-    head.setAttribute('radius', '0.14'); head.setAttribute('position', '0 1.6 0');
-    head.setAttribute('color', '#dddddd'); el.appendChild(head);
+    el.addEventListener('triggerdown', () => {
+      if(!window.gameState.hasWeapon || !window.gameState.gameStarted) return;
+      // Disparo clásico de la pistola de agua
+      window.GameAudio.play('shoot');
+      this.spawnWaterBullet();
+    });
+  },
+  toggleLaser: function(state) {
+    this.el.setAttribute('raycaster', {showLine: state, far: state ? 12 : 0});
+  },
+  spawnWaterBullet: function() {
+    let b = document.createElement('a-entity');
+    let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
+    this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
+    b.setAttribute('geometry', {primitive: 'sphere', radius: 0.03});
+    b.setAttribute('material', {color: '#00ffff'});
+    b.setAttribute('position', pos);
+    dir.multiplyScalar(-1);
+    b.setAttribute('bullet-runtime', {dx: dir.x, dy: dir.y, dz: dir.z, type: 'water'});
+    this.el.sceneEl.appendChild(b);
+  }
+});
 
-    // Tronco / Pecho
-    let torso = document.createElement('a-cylinder');
-    torso.setAttribute('radius', '0.18'); torso.setAttribute('height', '0.6');
-    torso.setAttribute('position', '0 1.1 0'); torso.setAttribute('color', '#222222');
-    el.appendChild(torso);
+// ================= HECHICERÍA DE GOJO COMPLETA (MANO IZQUIERDA) =================
+AFRAME.registerComponent('gojo-left-skills', {
+  init: function() {
+    this.isChargingRed = false;
+    this.chargeTimer = 0;
+    this.lightningSys = document.querySelector('#red-lightning-system');
+    this.core = document.querySelector('#red-core');
 
-    // Brazos (Izquierdo y Derecho)
-    let leftArm = document.createElement('a-cylinder');
-    leftArm.setAttribute('radius', '0.05'); leftArm.setAttribute('height', '0.5');
-    leftArm.setAttribute('position', '-0.25 1.1 0'); leftArm.setAttribute('color', '#555555');
-    el.appendChild(leftArm);
+    // Mapeo de botones de Oculus Quest para Hechizos Cruzados sin Arma
+    this.el.addEventListener('xbuttondown', () => {
+      if(window.gameState.hasWeapon || !window.gameState.gameStarted) return;
+      
+      // CASO A: Lanzar "Azul" Estático (Gasta 49 de Energía Maldita, requiere 50+)
+      if (window.gameState.energy >= 50 && !this.isChargingRed) {
+        this.fireBlueAttraction(false); // Fuego Azul Estático
+      }
+    });
 
-    let rightArm = document.createElement('a-cylinder');
-    rightArm.setAttribute('radius', '0.05'); rightArm.setAttribute('height', '0.5');
-    rightArm.setAttribute('position', '0.25 1.1 0'); rightArm.setAttribute('color', '#555555');
-    el.appendChild(rightArm);
+    // CASO B: Orbe de Atracción Activa (A + Grip Izquierdo) - Gasta 51 de energía
+    this.el.addEventListener('gripdown', () => {
+      if(!window.gameState.hasWeapon && window.gameState.energy >= 51 && window.gameState.gameStarted) {
+        this.fireBlueAttraction(true); // Variante de Atracción
+      }
+    });
 
-    // Piernas
-    let leftLeg = document.createElement('a-cylinder');
-    leftLeg.setAttribute('radius', '0.06'); leftLeg.setAttribute('height', '0.6');
-    leftLeg.setAttribute('position', '-0.1 0.5 0'); leftLeg.setAttribute('color', '#111111');
-    el.appendChild(leftLeg);
+    // CASO C: Iniciar Carga Cinemática del "Rojo" (Gasta 49 Energía Maldita)
+    this.el.addEventListener('ybuttondown', () => {
+      if(window.gameState.hasWeapon || window.gameState.energy < 49 || !window.gameState.gameStarted) return;
+      this.isChargingRed = true;
+      this.chargeTimer = 0;
+      window.GameAudio.play('charge_red');
+      
+      // EFECTO ANIME CORREGIDO: Los 3 rayos helicoidales orbitan generando la energía cósmica
+      this.lightningSys.setAttribute('visible', 'true');
+      this.core.setAttribute('material', 'opacity: 0.9; color: #ff0022; radius: 0.01');
+    });
 
-    let rightLeg = document.createElement('a-cylinder');
-    rightLeg.setAttribute('radius', '0.06'); rightLeg.setAttribute('height', '0.6');
-    rightLeg.setAttribute('position', '0.1 0.5 0'); rightLeg.setAttribute('color', '#111111');
-    el.appendChild(rightLeg);
+    this.el.addEventListener('ybuttonup', () => {
+      if(this.isChargingRed) {
+        this.isChargingRed = false;
+        this.lightningSys.setAttribute('visible', 'false');
+        
+        if(this.chargeTimer >= 1.6) {
+          // El núcleo se compacta al tamaño de una canica hiperconcentrada y sale disparado
+          window.gameState.energy -= 49;
+          this.updateHUD();
+          this.launchRedCanica();
+        } else {
+          this.core.setAttribute('material', 'opacity: 0');
+        }
+      }
+    });
   },
 
   tick: function(time, timeDelta) {
-    if (!window.gameState.gameStarted) return;
-    // Inteligencia Artificial Básica: Avanzar lentamente hacia la posición de la cámara del jugador
-    let playerPos = new THREE.Vector3(0, 0, 0); // Rig Origen
-    let npcPos = this.el.object3D.position;
-    
-    let dir = new THREE.Vector3().subVectors(playerPos, npcPos).normalize();
-    this.el.object3D.translateOnAxis(dir, 0.8 * (timeDelta / 1000));
-    this.el.object3D.position.y = 0; // Pegados al suelo
-  }
-});
-
-AFRAME.registerComponent('vr-weapon', {
-  init: function () {
-    let el = this.el;
-
-    // EVENTO RECOGER ARMA (Mango de agua inferior)
-    el.addEventListener('gripdown', () => {
-      if (window.gameState.isNearMenuGun && !window.gameState.hasWeapon) {
-        window.gameState.hasWeapon = true;
-        document.querySelector('#player-weapon-visual').setAttribute('visible', 'true');
-        document.querySelector('#menu-gun-anchor').setAttribute('visible', 'false');
-        
-        // ACTIVAR EL INFINITO PASIVO AL PORTAR EL ARMA
-        document.querySelector('#gojo-infinity-fire').setAttribute('visible', 'true');
-      }
-    });
-
-    // ACCIÓN DISPARAR BALA DE AGUA
-    el.addEventListener('triggerdown', () => {
-      if (!window.gameState.hasWeapon || !window.gameState.gameStarted) return;
+    if(this.isChargingRed) {
+      this.chargeTimer += timeDelta / 1000;
       
-      window.GameAudio.play('shoot');
-
-      // Animación física de retroceso
-      let visualGun = document.querySelector('#player-weapon-visual');
-      visualGun.setAttribute('position', '0 0.08 0.0');
-      setTimeout(() => { visualGun.setAttribute('position', '0 0.08 -0.04'); }, 70);
-
-      // Crear proyectil cilíndrico de agua
-      let bullet = document.createElement('a-entity');
-      let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
-      this.el.object3D.getWorldPosition(pos);
-      this.el.object3D.getWorldDirection(dir);
+      // Rotar y contraer los 3 rayos helicoidales estilo Gojo de forma matemática pura
+      let r1 = document.querySelector('#ray-1');
+      let r2 = document.querySelector('#ray-2');
+      let r3 = document.querySelector('#ray-3');
+      let rot = time * 0.6;
       
-      bullet.setAttribute('geometry', {primitive: 'cylinder', radius: 0.02, height: 0.15});
-      bullet.setAttribute('material', {src: '#water-tex', color: '#00eeff'});
-      bullet.setAttribute('position', pos);
-      bullet.setAttribute('rotation', '90 0 0');
-      dir.multiplyScalar(-1);
-      bullet.setAttribute('bullet-behavior', { dx: dir.x, dy: dir.y, dz: dir.z, isRed: false });
-      this.el.sceneEl.appendChild(bullet);
-    });
-  }
-});
-
-// ================= TÉCNICA REVERSAL ROJO MEJORADA (Efecto de Compresión a Canica) =================
-AFRAME.registerComponent('gojo-red-power', {
-  init: function () {
-    this.isCharging = false;
-    this.chargeTimer = 0;
-    this.core = document.querySelector('#red-core');
-    this.r1 = document.querySelector('#red-ring-1');
-    this.r2 = document.querySelector('#red-ring-2');
-
-    this.el.addEventListener('xbuttondown', () => {
-      if (!window.gameState.gameStarted) return;
-      this.isCharging = true;
-      this.chargeTimer = 0;
-      
-      window.GameAudio.play('charge');
-
-      // EFECTO ANIME DE CARGA: Empieza translúcido como aire, crece y luego se comprime al tamaño de una canica ultra-concentrada
-      this.core.setAttribute('material', 'opacity: 0.95; color: #ff0011');
-      this.core.setAttribute('animation', 'property: scale; from: 0.2 0.2 0.2; to: 4 4 4; dur: 900; easing: easeOutQuad');
-      
-      // Pasar a modo canica miniatura super-brillante a los 1000ms
-      setTimeout(() => {
-        if(this.isCharging) {
-          this.core.setAttribute('animation', 'property: scale; to: 0.4 0.4 0.4; dur: 800; easing: easeInElastic');
-          this.core.setAttribute('material', 'color: #ffffff; emissive: #ff0033;'); // Núcleo blanco incandescente
-        }
-      }, 1000);
-
-      // Anillos orbitales girando salvajemente
-      this.r1.setAttribute('material', 'opacity: 0.8');
-      this.r1.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 400; loop: true; easing: linear');
-      this.r2.setAttribute('material', 'opacity: 0.8');
-      this.r2.setAttribute('animation', 'property: rotation; to: 360 0 360; dur: 400; loop: true; easing: linear');
-    });
-
-    this.el.addEventListener('xbuttonup', () => {
-      if (this.isCharging) {
-        this.isCharging = false;
-        
-        this.core.setAttribute('material', 'opacity: 0');
-        this.r1.setAttribute('material', 'opacity: 0');
-        this.r2.setAttribute('material', 'opacity: 0');
-
-        if (this.chargeTimer >= 1.8) {
-          this.fireRedVacuum();
-        }
-      }
-    });
+      r1.setAttribute('position', `${Math.sin(rot)*0.15} 0.05 ${Math.cos(rot)*0.15}`);
+      r2.setAttribute('position', `${Math.sin(rot + 2)*0.15} 0.05 ${Math.cos(rot + 2)*0.15}`);
+      r3.setAttribute('position', `${Math.sin(rot + 4)*0.15} 0.05 ${Math.cos(rot + 4)*0.15}`);
+    }
   },
 
-  tick: function (time, timeDelta) {
-    if (this.isCharging) { this.chargeTimer += timeDelta / 1000; }
-  },
+  fireBlueAttraction: function(isVortex) {
+    window.gameState.energy -= isVortex ? 51 : 49;
+    this.updateHUD();
 
-  fireRedVacuum: function() {
-    window.GameAudio.play('red_blast');
-
-    let redOrb = document.createElement('a-entity');
+    let blue = document.createElement('a-entity');
     let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
-    this.el.object3D.getWorldPosition(pos);
-    this.el.object3D.getWorldDirection(dir);
-
-    // Sale disparado inicialmente compacto y explota al avanzar
-    redOrb.setAttribute('geometry', {primitive: 'sphere', radius: 0.12}); // Comienza del tamaño de una canica de plasma
-    redOrb.setAttribute('material', {color: '#ff0033', shader: 'flat'});
-    redOrb.setAttribute('position', pos);
+    this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
     
-    // Ondas de choque secundarias pegadas al proyectil
-    let waves = document.createElement('a-torus');
-    waves.setAttribute('radius', 0.25); waves.setAttribute('radius-tubular', 0.015);
-    waves.setAttribute('color', '#ffaa00');
-    waves.setAttribute('animation', 'property: scale; to: 3 3 3; dur: 250; loop: true');
-    redOrb.appendChild(waves);
-
+    blue.setAttribute('geometry', {primitive: 'sphere', radius: isVortex ? 0.22 : 0.15});
+    blue.setAttribute('material', {color: '#0055ff', emissive: '#00aaff', shader: 'flat'});
+    blue.setAttribute('position', pos);
     dir.multiplyScalar(-1);
-    redOrb.setAttribute('bullet-behavior', { dx: dir.x, dy: dir.y, dz: dir.z, isRed: true });
-    this.el.sceneEl.appendChild(redOrb);
+    
+    blue.setAttribute('bullet-runtime', {dx: dir.x, dy: dir.y, dz: dir.z, type: isVortex ? 'blue_vortex' : 'blue_static'});
+    this.el.sceneEl.appendChild(blue);
+  },
+
+  launchRedCanica: function() {
+    let red = document.createElement('a-entity');
+    let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
+    this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
+    
+    // Proyecciones de canica ultra compacta
+    red.setAttribute('geometry', {primitive: 'sphere', radius: 0.04});
+    red.setAttribute('material', {color: '#ff0033', shader: 'flat'});
+    red.setAttribute('position', pos);
+    dir.multiplyScalar(-1);
+    
+    red.setAttribute('bullet-runtime', {dx: dir.x, dy: dir.y, dz: dir.z, type: 'red'});
+    this.el.sceneEl.appendChild(red);
+  },
+
+  updateHUD: function() {
+    document.querySelector('#hud-energy-text').setAttribute('text', 'value: ENERGIA MALDITA: ' + Math.max(0, window.gameState.energy) + '%;');
   }
 });
 
-// COMPORTAMIENTO DE BALAS DE AGUA Y ROJO MÁXIMO
-AFRAME.registerComponent('bullet-behavior', {
-  schema: { dx: {type: 'number'}, dy: {type: 'number'}, dz: {type: 'number'}, isRed: {type: 'boolean'} },
-  tick: function (time, timeDelta) {
-    let currentSpeed = (this.data.isRed ? 45 : 20) * (timeDelta / 1000);
-    this.el.object3D.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), currentSpeed);
-    
-    let bulletPos = this.el.object3D.position;
+// ================= SISTEMA INTEGRADO DE WAR OF WIZARDS (SISTEMA MANÁ) =================
+AFRAME.registerComponent('wizard-wand-system', {
+  init: function() {
+    let el = this.el;
+    this.wandVisual = document.querySelector('#wizard-wand-visual');
 
-    // Verificar colisión con todos los enemigos activos de la habitación
-    let enemies = window.gameState.activeEnemies;
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      let enemy = enemies[i];
-      if (enemy && enemy.object3D) {
-        let enemyPos = enemy.object3D.position;
-        if (bulletPos.distanceTo(enemyPos) < 1.4) {
-          // Destruir al enemigo y removerlo del registro global
-          if (enemy.parentNode) enemy.parentNode.removeChild(enemy);
-          enemies.splice(i, 1);
-          
-          if (this.el.parentNode) this.el.parentNode.removeChild(this.el);
-          return;
+    // Gesto e Invocación cruzada: Grip Izquierdo + Botón Y manteniendo la mano arriba de la derecha
+    this.el.addEventListener('gripdown', () => {
+      if(!window.gameState.hasWeapon && window.gameState.mana >= 100 && !window.gameState.wandEquipped && window.gameState.gameStarted) {
+        window.gameState.wandEquipped = true;
+        window.gameState.spellsCastCount = 0;
+        this.wandVisual.setAttribute('visible', 'true');
+      }
+    });
+
+    // Dibujo / Casatación de Hechizo con botón superior del Grip (Trigger Izquierdo)
+    this.el.addEventListener('triggerdown', () => {
+      if(!window.gameState.wandEquipped) return;
+
+      window.gameState.spellsCastCount++;
+      window.gameState.mana -= 34; // Permite exactamente 3 tiros antes de vaciar los 100 de Maná
+      document.querySelector('#hud-mana-text').setAttribute('text', 'value: MANA: ' + Math.max(0, window.gameState.mana) + '%;');
+      
+      window.GameAudio.play('fireball');
+      this.castFireballSpell();
+
+      if(window.gameState.spellsCastCount >= 3) {
+        window.gameState.wandEquipped = false;
+        window.gameState.mana = 0;
+        this.wandVisual.setAttribute('visible', 'false');
+      }
+    });
+  },
+
+  castFireballSpell: function() {
+    let fb = document.createElement('a-entity');
+    let pos = new THREE.Vector3(); let dir = new THREE.Vector3();
+    this.el.object3D.getWorldPosition(pos); this.el.object3D.getWorldDirection(dir);
+    
+    // Modelo réplica exacta de bola de fuego de War of Wizards
+    fb.setAttribute('geometry', {primitive: 'sphere', radius: 0.16});
+    fb.setAttribute('material', {color: '#ffaa00', emissive: '#ff3300'});
+    fb.setAttribute('position', pos);
+    dir.multiplyScalar(-1);
+    
+    fb.setAttribute('bullet-runtime', {dx: dir.x, dy: dir.y, dz: dir.z, type: 'fireball'});
+    this.el.sceneEl.appendChild(fb);
+  }
+});
+
+// ================= RUNTIME Y FÍSICA AVANZADA DE PROYECTILES =================
+AFRAME.registerComponent('bullet-runtime', {
+  schema: { dx: {type:'number'}, dy: {type:'number'}, dz: {type:'number'}, type: {type:'string'} },
+  init: function() {
+    this.timer = 0;
+    this.isStaticBlue = this.data.type === 'blue_static';
+  },
+  tick: function(time, timeDelta) {
+    let obj = this.el.object3D;
+    this.timer += timeDelta / 1000;
+
+    // LÓGICA DE AZUL ESTÁTICO: Se congela en el lugar por 5 segundos exactos
+    if (this.isStaticBlue) {
+      if(this.timer < 0.3) {
+        obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), 12 * (timeDelta / 1000));
+      }
+      if(this.timer >= 5.0) {
+        if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+        return;
+      }
+      // Verificar colisión cruzada si un "Rojo" entra en contacto con este Azul Estático para detonar un PÚRPURA (Hollow Nuke)
+      let allProjectiles = document.querySelectorAll('[bullet-runtime]');
+      allProjectiles.forEach(p => {
+        if(p !== this.el && p.components['bullet-runtime'].data.type === 'red') {
+          if(obj.position.distanceTo(p.object3D.position) < 0.8) {
+            this.detonatePurpleNuke(obj.position);
+            if(p.parentNode) p.parentNode.removeChild(p);
+            if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+          }
         }
+      });
+      return;
+    }
+
+    // VARIANTE AZUL VORTEX: Atrae a todos los NPCs Mannequin hacia su centro gravitatorio gravitacional
+    if (this.data.type === 'blue_vortex') {
+      obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), 9 * (timeDelta / 1000));
+      window.gameState.activeEnemies.forEach(e => {
+        if(e.object3D && obj.position.distanceTo(e.object3D.position) < 4.0) {
+          let pullDir = new THREE.Vector3().subVectors(obj.position, e.object3D.position).normalize();
+          e.object3D.translateOnAxis(pullDir, 4.5 * (timeDelta / 1000)); // Atracción forzada
+        }
+      });
+    } else {
+      // Movimiento estándar de balas rectilíneas
+      let speed = (this.data.type === 'red') ? 38 : 18;
+      obj.translateOnAxis(new THREE.Vector3(this.data.dx, this.data.dy, this.data.dz).normalize(), speed * (timeDelta / 1000));
+    }
+
+    // Colisiones del Proyectil contra NPCs de Mannequin Inteligentes
+    let enemies = window.gameState.activeEnemies;
+    for(let i = enemies.length - 1; i >= 0; i--) {
+      let e = enemies[i];
+      if(e && e.object3D && obj.position.distanceTo(e.object3D.position) < 1.3) {
+        if(e.parentNode) e.parentNode.removeChild(e);
+        enemies.splice(i, 1);
+        if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
+        return;
       }
     }
 
-    // Auto-destrucción por distancia fuera de rango
-    if (Math.abs(bulletPos.z) > 45) { if(this.el.parentNode) this.el.parentNode.removeChild(this.el); }
+    if(this.timer > 6.0 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+  },
+
+  detonatePurpleNuke: function(impactPos) {
+    window.GameAudio.play('purple_nuke');
+    let explosion = document.createElement('a-sphere');
+    explosion.setAttribute('position', impactPos);
+    explosion.setAttribute('radius', '0.5');
+    explosion.setAttribute('material', {color: '#9900ff', shader: 'flat', transparent: true, opacity: 0.85});
+    // Onda expansiva gigante destructiva por escala
+    explosion.setAttribute('animation', 'property: scale; to: 14 14 14; dur: 600; easing: easeOutQuad');
+    this.el.sceneEl.appendChild(explosion);
+
+    // Liquidar instantáneamente a todos los maniquíes en el área del mapa
+    setTimeout(() => {
+      let enemies = window.gameState.activeEnemies;
+      for(let i = enemies.length - 1; i >= 0; i--) {
+        let e = enemies[i];
+        if(e && e.object3D && impactPos.distanceTo(e.object3D.position) < 8.0) {
+          if(e.parentNode) e.parentNode.removeChild(e);
+          enemies.splice(i, 1);
+        }
+      }
+      if(explosion.parentNode) explosion.parentNode.removeChild(explosion);
+    }, 600);
   }
 });
