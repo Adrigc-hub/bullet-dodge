@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>War of Manequins: Mystic Edition</title>
+    <title>War of Manequins: Infinite Magic</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     
@@ -16,114 +16,106 @@
 
     <div id="loading-screen">
       <div class="magic-loader"></div>
-      <h1 style="letter-spacing: 3px;">CONJURANDO ARMAS MÁGICAS</h1>
-      <p style="color: #667;">Forjando agua, papel y runas antiguas...</p>
+      <h1 style="letter-spacing: 3px;">JIJIJI JAA: MÁXIMOS GRÁFICOS ACTIVADOS</h1>
+      <p style="color: #667;">Compilando física de fluidos y Aura de Gojo...</p>
     </div>
 
-    <a-scene menu-system control-fix renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.3;" xr-mode-ui="XRMode: xr; enterVRButton: #custom-vr-btn">
+    <a-scene menu-system control-fix physics="gravity: -9.8"
+             renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.4; toneMapping: ACESFilmic; antialias: true;">
       
       <a-assets>
         <img id="grid-tex">
-        <img id="hd-metal">
+        <img id="water-tex">
+        <img id="space-sky">
       </a-assets>
 
-      <a-entity type="ambient" id="ambient-light" light="color: #120f2b; intensity: 0.9"></a-entity>
-      <a-entity type="directional" light="intensity: 1.6; color: #aaccff; castShadow: true" position="0 15 5"></a-entity>
-      <a-entity id="menu-light" type="point" light="color: #0088ff; intensity: 3; distance: 15" position="0 1.5 -2.5"></a-entity>
+      <a-entity type="ambient" id="ambient-light" light="color: #1a153b; intensity: 1.2"></a-entity>
+      <a-entity type="directional" light="intensity: 2.2; color: #ffebcc; castShadow: true;" position="5 20 5"></a-entity>
 
-      <div id="custom-vr-btn" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; background: #ff0055; color: white; padding: 12px; border-radius: 5px; cursor: pointer; font-family: sans-serif; font-weight: bold;">ENTRAR A RV TOTAL</div>
+      <a-sky id="sky-box" src="#space-sky" radius="100" animation="property: rotation; to: 0 360 0; loop: true; dur: 120000; easing: linear"></a-sky>
 
-      <a-entity id="main-menu" position="0 1.3 -2.8">
+      <a-entity id="main-menu" position="0 1.3 -2.2">
         
-        <a-cylinder rotation="90 0 0" radius="2.5" height="0.02" color="#030114" material="roughness: 0.4; metalness: 0.8">
-          <a-torus radius="2.0" radius-tubular="0.015" color="#00ffcc" id="galaxy-ring-1"></a-torus>
-          <a-torus radius="2.4" radius-tubular="0.01" color="#ff00aa" id="galaxy-ring-2" rotation="20 30 0"></a-torus>
-        </a-cylinder>
-
-        <a-entity id="menu-title" text="value: WAR OF MANEQUINS; color: #00ffcc; align: center; width: 5; font: kelsonsans" position="0 1.1 0.1"></a-entity>
-        <a-entity id="secret-notice" text="value: SISTEMA OPERATIVO MISTICO CONECTADO; color: #66aacc; align: center; width: 2.5" position="0 0.85 0.1"></a-entity>
+        <a-entity id="menu-title" text="value: WAR OF MANEQUINS; color: #00ffcc; align: center; width: 5.5; font: kelsonsans" position="0 1.1 0"></a-entity>
         
-        <a-box id="start-button" position="-0.6 0.2 0.1" scale="0.8 0.28 0.12" color="#ff0055" class="clickable"
-               animation__hover="property: scale; to: 0.85 0.32 0.15; startEvents: mouseenter; dur: 150"
-               animation__leave="property: scale; to: 0.8 0.28 0.12; startEvents: mouseleave; dur: 150">
-          <a-entity id="button-text" text="value: MODO HISTORIA; color: #fff; align: center; width: 2.8" position="0 0 0.5"></a-entity>
+        <a-box id="start-button" class="clickable" position="-0.6 0.3 0" scale="0.75 0.25 0.1" color="#ff0055" material="metalness: 0.8; roughness: 0.1">
+          <a-entity text="value: MODO HISTORIA; color: #fff; align: center; width: 2.8" position="0 0 0.06"></a-box>
+
+        <a-box id="sandbox-button" class="clickable" position="0.6 0.3 0" scale="0.75 0.25 0.1" color="#00ffcc" material="metalness: 0.8; roughness: 0.1">
+          <a-entity text="value: MODO LIBRE; color: #000; align: center; width: 2.8" position="0 0 0.06"></a-box>
+
+        <a-box id="map-selection-btn" class="clickable" position="0 -0.1 0" scale="1.2 0.22 0.1" color="#331155" material="metalness: 0.6">
+          <a-entity id="map-btn-text" text="value: MAPA: NEBULA CORP (CLICK PARA CAMBIAR); color: #fff; align: center; width: 2.5" position="0 0 0.06"></a-box>
         </a-box>
 
-        <a-box id="sandbox-button" position="0.6 0.2 0.1" scale="0.8 0.28 0.12" color="#00ffcc" class="clickable"
-               animation__hover="property: scale; to: 0.85 0.32 0.15; startEvents: mouseenter; dur: 150"
-               animation__leave="property: scale; to: 0.8 0.28 0.12; startEvents: mouseleave; dur: 150">
-          <a-entity text="value: MODO LIBRE; color: #000; align: center; width: 2.8" position="0 0 0.5"></a-entity>
-        </a-box>
-
-        <a-box id="map-button" position="-0.6 -0.25 0.1" scale="0.8 0.22 0.12" color="#331155" class="clickable">
-          <a-entity text="value: MAPA: NEBULA; color: #fff; align: center; width: 2.5" position="0 0 0.5"></a-entity>
-        </a-box>
-
-        <a-box id="info-button" position="0.6 -0.25 0.1" scale="0.8 0.22 0.12" color="#222" class="clickable">
-          <a-entity text="value: EQUIPAMIENTO VR; color: #aaa; align: center; width: 2.5" position="0 0 0.5"></a-entity>
-        </a-box>
-
-        <a-plane position="-1.8 0 0.2" width="0.9" height="1.2" color="#05021a" material="opacity: 0.85; roughness: 0.5">
-          <a-entity text="value: STATS\n\nSCORE: 000\nBALAS: INF\nMAGIA: MAX\nTIME: 100%; color: #00ffcc; align: center; width: 2" position="0 0 0.05"></a-entity>
-        </a-plane>
-
-        <a-entity id="menu-gun" equippable-gun position="0 -0.8 0.3" rotation="0 0 0"
-                  animation="property: position; to: 0 -0.76 0.3; dir: alternate; loop: true; dur: 1800">
+        <a-entity id="menu-gun" position="0 -0.6 0.2" rotation="0 45 0"
+                  animation="property: rotation; to: 0 405 0; loop: true; dur: 8000; easing: linear">
           
-          <a-sphere radius="0.18" color="#00ffff" material="opacity: 0.25; transparent: true; wireframe: true"
-                    animation="property: rotation; to: 360 360 0; loop: true; dur: 4000; easing: linear"></a-sphere>
-          
-          <a-cylinder radius="0.06" height="0.25" rotation="90 0 0" color="#c2b29a" material="roughness: 0.9; metalness: 0.1">
-            <a-cylinder radius="0.02" height="0.26" rotation="0 0 0" color="#5c4a37" position="0 0 0"></a-cylinder>
-            <a-cylinder radius="0.058" height="0.22" color="#ffffff" material="roughness: 1; metalness: 0" position="0 0 0"></a-cylinder>
+          <a-cylinder radius="0.045" height="0.2" rotation="90 0 0" color="#d6c2a1" material="roughness: 1.0">
+            <a-cylinder radius="0.015" height="0.21" color="#7c6349"></a-cylinder>
+            <a-cylinder radius="0.043" height="0.18" color="#ffffff" position="0 0 0"></a-cylinder>
           </a-cylinder>
 
-          <a-box position="0 -0.12 -0.05" scale="0.032 0.14 0.06" color="#00aaff" 
-                 material="opacity: 0.65; transparent: true; roughness: 0.0; metalness: 0.1; sphericalEnvMap: #grid-tex"
-                 animation="property: scale; to: 0.035 0.14 0.065; dir: alternate; loop: true; dur: 600">
-            <a-sphere position="0 0.03 0" radius="0.015" color="#ffffff" material="opacity: 0.8; transparent: true"></a-sphere>
-            <a-sphere position="0 -0.03 0" radius="0.01" color="#ffffff" material="opacity: 0.8; transparent: true"></a-sphere>
+          <a-box position="0 -0.1 -0.02" scale="0.025 0.12 0.05" src="#water-tex"
+                 material="opacity: 0.75; transparent: true; roughness: 0.0; metalness: 0.9;">
           </a-box>
 
-          <a-entity text="value: RECOGER ARMA MÁGICA; color: #00ffcc; align: center; width: 1.8" position="0 0.18 0"></a-entity>
+          <a-entity text="value: APRETA GRIP PARA AGARRAR; color: #ffffff; align: center; width: 2" position="0 0.15 0"></a-entity>
         </a-entity>
+
       </a-entity>
 
       <a-entity id="game-elements" visible="false">
         <a-entity id="virtual-map">
-          <a-plane position="0 0 0" rotation="-90 0 0" width="60" height="60" material="src: #grid-tex; repeat: 40 40; roughness: 0.2; metalness: 0.6;"></a-plane>
-          <a-box position="-3 2 -8" scale="1 4 1" color="#00ffcc" material="roughness: 0.1; metalness: 0.9; opacity: 0.7"></a-box>
-          <a-box position="4 1.5 -10" scale="2 3 2" color="#ff0055" material="roughness: 0.1; metalness: 0.9; opacity: 0.7"></a-box>
+          <a-plane position="0 0 0" rotation="-90 0 0" width="60" height="60" material="src: #grid-tex; repeat: 40 40; roughness: 0.05; metalness: 0.8;"></a-plane>
+          
+          <a-box position="-4 2.5 -9" scale="1.5 5 1.5" color="#0e0720" material="roughness: 0.1; metalness: 0.9;"></a-box>
+          <a-box position="5 1.5 -12" scale="3 3 3" color="#110022" material="roughness: 0.2; metalness: 0.9;"></a-box>
+
+          <a-entity id="dropped-gun-1" class="loot-weapon" position="-2 0.1 -5" rotation="0 90 90">
+            <a-cylinder radius="0.03" height="0.25" rotation="90 0 0" color="#ff0055"></a-cylinder>
+            <a-box position="0 -0.08 0" scale="0.02 0.1 0.04" src="#water-tex" material="transparent:true; opacity:0.8"></a-box>
+          </a-entity>
+
+          <a-entity id="dropped-gun-2" class="loot-weapon" position="3 0.1 -7" rotation="0 40 90">
+            <a-cylinder radius="0.05" height="0.18" rotation="90 0 0" color="#00ffcc"></a-cylinder>
+            <a-box position="0 -0.08 0" scale="0.02 0.1 0.04" src="#water-tex" material="transparent:true; opacity:0.8"></a-box>
+          </a-entity>
         </a-entity>
       </a-entity>
-      
-      <a-sky id="sky-box" color="#010005"></a-sky>
 
-      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.18" control-fix>
-        <a-entity camera position="0 1.6 0" look-controls real-jump-detector vr-weapon>
-          
-          <a-cursor id="fuse-cursor" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.018" material="color: #ff0055; shader: flat" raycaster="objects: .clickable, #menu-gun, [enemy-behavior]"></a-cursor>
+      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.20" control-fix>
+        
+        <a-entity camera position="0 1.6 0" look-controls real-jump-detector>
+          <a-cursor id="fuse-cursor" visible="false" raycaster="objects: .clickable"></a-cursor>
+        </a-entity>
 
-          <a-entity id="player-weapon-visual" position="0.25 -0.25 -0.4" rotation="0 180 0" visible="false">
-            <a-box scale="0.1 0.1 0.1" color="#00ffff" material="wireframe: true; opacity: 0.4" animation="property: rotation; to: 0 360 360; loop: true; dur: 2000"></a-box>
-            
-            <a-cylinder radius="0.04" height="0.22" rotation="90 0 0" color="#c2b29a" material="roughness: 0.9">
-              <a-cylinder radius="0.015" height="0.23" color="#5c4a37"></a-cylinder>
-              <a-cylinder radius="0.038" height="0.20" color="#ffffff" material="roughness: 1"></a-cylinder>
+        <a-entity id="left-hand" oculus-touch-controls="hand: left" sphere-collider="objects: .clickable, #menu-gun, .loot-weapon" hand-controls="hand: left">
+          <a-sphere radius="0.08" color="#0088ff" material="wireframe: true; opacity: 0.4; shader: flat;"
+                    animation="property: rotation; to: 360 0 360; loop: true; dur: 1500"></a-sphere>
+        </a-entity>
+
+        <a-entity id="right-hand" oculus-touch-controls="hand: right" sphere-collider="objects: .clickable, #menu-gun, .loot-weapon" hand-controls="hand: right" vr-weapon>
+          <a-sphere radius="0.08" color="#ff0055" material="wireframe: true; opacity: 0.4; shader: flat;"
+                    animation="property: rotation; to: 0 360 360; loop: true; dur: 1500"></a-sphere>
+
+          <a-entity id="player-weapon-visual" position="0 -0.05 -0.15" rotation="0 180 0" visible="false">
+            <a-cylinder radius="0.04" height="0.22" rotation="90 0 0" color="#c2b29a" material="roughness: 1.0">
+              <a-cylinder radius="0.012" height="0.23" color="#5c4a37"></a-cylinder>
+              <a-cylinder radius="0.038" height="0.19" color="#ffffff"></a-cylinder>
             </a-cylinder>
-            
-            <a-box position="0 -0.09 -0.03" scale="0.025 0.11 0.05" color="#00aaff" material="opacity: 0.65; transparent: true; roughness: 0.0"
-                   animation="property: rotation; to: 0 5 0; dir: alternate; loop: true; dur: 400"></a-box>
+            <a-box position="0 -0.11 -0.02" scale="0.024 0.11 0.048" src="#water-tex" 
+                   material="opacity: 0.7; transparent: true; roughness: 0.0; metalness: 0.8"
+                   animation="property: position; to: 0 -0.108 -0.02; dir: alternate; loop: true; dur: 300">
+            </a-box>
           </a-entity>
         </a-entity>
 
-        <a-entity oculus-touch-controls="hand: left"></a-entity>
-        <a-entity oculus-touch-controls="hand: right" vr-weapon fist-melee></a-entity>
       </a-entity>
 
       <a-entity id="enemy-target" enemy-behavior position="0 -10 -6">
-        <a-sphere position="0 1.1 0" radius="0.22" color="#ff0055" material="roughness: 0.1; metalness: 0.9"></a-sphere>
-        <a-cone position="0 0.4 0" radius-bottom="0.3" radius-top="0.1" height="0.9" color="#111" material="metalness: 0.9"></a-cone>
+        <a-sphere position="0 1.1 0" radius="0.25" color="#ff0055" material="roughness: 0.1; metalness: 0.9"></a-sphere>
+        <a-cone position="0 0.4 0" radius-bottom="0.35" radius-top="0.1" height="1.0" color="#0a0a0a" material="metalness: 0.95; roughness: 0.05;"></a-cone>
       </a-entity>
 
     </a-scene>
@@ -136,14 +128,9 @@
       });
 
       document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById('grid-tex').src = Textures.createGrid('#020108', '#ff0055');
-        document.getElementById('hd-metal').src = Textures.createCyber();
-        
-        // Agregar comportamiento estético interactivo a todos los nuevos botones del menú
-        document.querySelectorAll('.clickable').forEach(button => {
-          button.addEventListener('mouseenter', () => button.setAttribute('material', 'brightness: 1.4'));
-          button.addEventListener('mouseleave', () => button.setAttribute('material', 'brightness: 1.0'));
-        });
+        document.getElementById('grid-tex').src = Textures.createGrid('#03010f', '#00ffcc');
+        document.getElementById('water-tex').src = Textures.createWaterPattern();
+        document.getElementById('space-sky').src = Textures.createSpaceSky();
       });
     </script>
   </body>
