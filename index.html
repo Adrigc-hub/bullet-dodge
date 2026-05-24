@@ -19,7 +19,7 @@
       <p style="color:#ff0055; margin-top:5px;">Renderizando nuevas habitaciones y mecánicas</p>
     </div>
 
-    <a-scene menu-system game-manager renderer="colorManagement: true; exposure: 1.5;">
+    <a-scene menu-system game-manager renderer="colorManagement: true; exposure: 1.5;" xr-mode-ui="enabled: true; enterVRButton: #custom-vr-btn">
       
       <a-sky id="galaxy-dome" color="#0d0221" material="shader: flat; color: #0d0221"></a-sky>
 
@@ -28,7 +28,7 @@
 
       <a-entity id="main-menu" position="0 1.3 -2.5">
         <a-entity text="value: WAR OF MANNEQUINS; color: #00ffcc; align: center; width: 6;" position="0 0.8 0"></a-entity>
-        <a-entity text="value: AUTO-RELOAD UPDATE V4; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
+        <a-entity text="value: VR INMERSIVO CORREGIDO V5; color: #ff0055; align: center; width: 4.5;" position="0 0.55 0"></a-entity>
 
         <a-box id="start-button" class="raycastable" position="-0.7 0 0" scale="0.8 0.26 0.1" color="#ff0055" data-clickable>
           <a-entity text="value: MODO COMBATE; color: #fff; align: center; width: 3;" position="0 0 0.06"></a-entity>
