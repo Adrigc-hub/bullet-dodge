@@ -4,53 +4,11 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #02000a;
-  font-family: 'Roboto', sans-serif;
-  user-select: none;
+  background-color: #03010a;
 }
 
-/* Forzar que el canvas de A-Frame siempre sea cliqueable en VR */
+/* Forzar que el puntero e interfaces de A-Frame respondan al instante sin bloqueos en el visor */
 .a-canvas {
   z-index: 1 !important;
   pointer-events: auto !important;
-}
-
-/* Capa de actualización corregida: z-index rebajado para no tapar los botones nativos de VR */
-#hot-reload-screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(circle, #19003a 0%, #02000d 100%);
-  z-index: 10; /* Suficiente para el menú plano, pero no bloquea la API de WebXR */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #00ffcc;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-#hot-reload-screen.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 99999; /* Solo sube si explícitamente se está actualizando el código */
-}
-
-.reload-spinner {
-  width: 60px;
-  height: 60px;
-  border: 5px solid #ff0055;
-  border-top: 5px solid #00ffcc;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
