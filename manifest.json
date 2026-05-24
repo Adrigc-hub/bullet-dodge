@@ -3,13 +3,14 @@
   "name": "War of Manequins: Infinite Magic",
   "icons": [
     {
-      "src": "https://aframe.io/releases/1.5.0/images/aframe-logo-128.png",
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop",
       "type": "image/png",
-      "sizes": "128x128"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#010005",
+  "background_color": "#02000a",
   "theme_color": "#00ffcc",
   "display": "standalone",
   "orientation": "landscape"
