@@ -9,7 +9,13 @@ html, body {
   user-select: none;
 }
 
-/* Capa de carga automática al actualizar código */
+/* Forzar que el canvas de A-Frame siempre sea cliqueable en VR */
+.a-canvas {
+  z-index: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Capa de actualización corregida: z-index rebajado para no tapar los botones nativos de VR */
 #hot-reload-screen {
   position: absolute;
   top: 0;
@@ -17,7 +23,7 @@ html, body {
   width: 100vw;
   height: 100vh;
   background: radial-gradient(circle, #19003a 0%, #02000d 100%);
-  z-index: 9999;
+  z-index: 10; /* Suficiente para el menú plano, pero no bloquea la API de WebXR */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -31,6 +37,7 @@ html, body {
 #hot-reload-screen.active {
   opacity: 1;
   pointer-events: auto;
+  z-index: 99999; /* Solo sube si explícitamente se está actualizando el código */
 }
 
 .reload-spinner {
