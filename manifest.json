@@ -3,15 +3,15 @@
   "name": "War of Manequins: Infinite Magic",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=512&auto=format&fit=crop",
-      "type": "image/png",
+      "src": "https://api.dicebear.com/7.x/identicon/svg?seed=GojoSpaceX",
+      "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
   "start_url": "./index.html",
   "background_color": "#02000a",
-  "theme_color": "#00ffcc",
+  "theme_color": "#ff0055",
   "display": "standalone",
   "orientation": "landscape"
 }
