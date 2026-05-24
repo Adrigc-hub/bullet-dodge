@@ -1,18 +1,18 @@
 AFRAME.registerComponent('vr-weapon', {
   init: function () {
+    // Escuchar eventos de disparo físicos (Mandos Meta Quest)
     this.el.addEventListener('triggerdown', () => { this.shoot(); });
     this.el.addEventListener('abuttondown', () => { this.shoot(); });
 
-    // Disparar haciendo un "Tap" en la pantalla si ya recogiste el arma
+    // Escuchar clics en pantallas o clicks del puntero WebXR
     window.addEventListener('click', () => {
-      if(window.gameState.hasWeapon && window.gameState.gameStarted) {
+      if(window.gameState.gameStarted) {
         this.shoot();
       }
     });
   },
   shoot: function () {
-    if(!window.gameState.hasWeapon) return;
-
+    // El jugador siempre tiene el arma activa gracias al efecto mágico indestructible
     let bullet = document.createElement('a-entity');
     let weaponPos = new THREE.Vector3();
     let weaponDir = new THREE.Vector3();
@@ -20,31 +20,29 @@ AFRAME.registerComponent('vr-weapon', {
     this.el.object3D.getWorldPosition(weaponPos);
     this.el.object3D.getWorldDirection(weaponDir);
 
-    // Balas mágicas HD hiperrealistas con luz propia incorporada
-    bullet.setAttribute('geometry', {primitive: 'sphere', radius: 0.08});
-    bullet.setAttribute('material', {color: '#00ffcc', emissive: '#00ffcc', roughness: 0.1});
-    bullet.setAttribute('light', {type: 'point', color: '#00ffcc', intensity: 1, distance: 3});
+    // Las balas cambian a esferas purificadoras de agua mística a alta velocidad
+    bullet.setAttribute('geometry', {primitive: 'sphere', radius: 0.07});
+    bullet.setAttribute('material', {color: '#00ccff', emissive: '#0055ff', roughness: 0.0, opacity: 0.8, transparent: true});
+    bullet.setAttribute('light', {type: 'point', color: '#00aaff', intensity: 1.5, distance: 4});
     bullet.setAttribute('position', weaponPos);
     
     weaponDir.multiplyScalar(-1);
     bullet.setAttribute('bullet-behavior', {
       directionX: weaponDir.x,
       directionY: weaponDir.y,
-      directionZ: weaponDir.z,
-      isEnemy: false
+      directionZ: weaponDir.z
     });
     
     this.el.sceneEl.appendChild(bullet);
   }
 });
 
+// Mantener el componente equippable por compatibilidad con el objeto del menú decorativo
 AFRAME.registerComponent('equippable-gun', {
   init: function () {
     this.el.addEventListener('click', () => {
-      window.gameState.hasWeapon = true;
-      document.querySelector('#player-weapon-visual').setAttribute('visible', 'true');
-      this.el.setAttribute('visible', 'false');
-      this.el.setAttribute('position', '0 -50 0');
+      // Al dispararle o mirarlo en el menú, genera una explosión mística visual
+      this.el.setAttribute('animation', 'property: scale; to: 0 0 0; dur: 200');
     });
   }
 });
@@ -52,17 +50,16 @@ AFRAME.registerComponent('equippable-gun', {
 AFRAME.registerComponent('bullet-behavior', {
   schema: { directionX: {type: 'number'}, directionY: {type: 'number'}, directionZ: {type: 'number'} },
   tick: function (time, timeDelta) {
-    let speed = 22 * (timeDelta / 1000) * window.gameState.timeScale;
+    let speed = 24 * (timeDelta / 1000) * window.gameState.timeScale;
     this.el.object3D.translateOnAxis(new THREE.Vector3(this.data.directionX, this.data.directionY, this.data.directionZ).normalize(), speed);
     
     let bulletPos = this.el.object3D.position;
-    
-    // Verificar impacto en el maniquí gigante
     let enemy = document.querySelector('#enemy-target');
+    
     if(enemy) {
       let enemyPos = enemy.object3D.position;
       let dist = bulletPos.distanceTo(enemyPos);
-      if(dist < 0.9) { // Caja de colisión adaptada al tamaño del enemigo
+      if(dist < 0.95) { 
         enemy.emit('destroy-enemy');
         if(this.el.parentNode) this.el.parentNode.removeChild(this.el);
       }
@@ -74,7 +71,7 @@ AFRAME.registerComponent('bullet-behavior', {
   }
 });
 
-// Romper al enemigo a puros golpes (Estilo Gorilla Tag agresivo)
+// Sistema Melee (Golpes cuerpo a cuerpo con las manos físicas)
 AFRAME.registerComponent('fist-melee', {
   tick: function () {
     let handPos = this.el.object3D.position;
@@ -82,7 +79,7 @@ AFRAME.registerComponent('fist-melee', {
     if(enemy) {
       let enemyPos = enemy.object3D.position;
       let dist = handPos.distanceTo(enemyPos);
-      if(dist < 0.9) { 
+      if(dist < 0.95) { 
         enemy.emit('destroy-enemy');
       }
     }
