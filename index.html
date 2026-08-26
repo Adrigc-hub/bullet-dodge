@@ -1,113 +1,173 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mannequin VR: Jujutsu Complete Edition</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-    <script src="textures.js"></script>
-    <script src="game-logic.js"></script>
-    <script src="combat.js"></script>
-  </head>
-  <body>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animación 3D Furry TikTok (Three.js)</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #0d0f18;
+      font-family: Arial, sans-serif;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #00ffcc;
+      z-index: 10;
+      background: rgba(0,0,0,0.7);
+      padding: 12px;
+      border-radius: 8px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
 
-    <a-scene menu-system renderer="colorManagement: true; exposure: 1.3;">
-      
-      <a-sky id="galaxy-dome" color="#05030f"></a-sky>
-      
-      <a-entity light="type: ambient; color: #554499; intensity: 1.4"></a-entity>
-      <a-entity light="type: directional; intensity: 2.0; color: #ffffff;" position="2 12 4"></a-entity>
+  <div id="ui">
+    ⚡ <b>WebGL 3D Furry Animation</b><br>
+    FPS: Nativo (60-120)<br>
+    Renderizado: Tiempo Real (Código GitHub)
+  </div>
 
-      <a-entity id="mannequin-menu" position="0 1.4 -2.2" rotation="0 0 0">
-        <a-plane width="2.6" height="1.5" color="#00162d" material="opacity: 0.9; transparent: true; shader: flat" class="raycast-surface">
-          
-          <a-entity text="value: MANNEQUIN; color: #ffffff; align: center; width: 6.5; font: roboto" position="0 0.55 0.02"></a-entity>
-          
-          <a-entity id="btn-play" class="raycastable" position="-0.75 -0.05 0.03" geometry="primitive: plane; width: 0.7; height: 0.28" material="color: #00ffcc; shader: flat" data-clickable>
-             <a-entity text="value: QUICK PLAY; color: #000000; align: center; width: 3.4" position="0 0 0.01"></a-entity>
-          </a-entity>
+  <script>
+    // 1. Configuración de la Escena 3D y Cámara
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0d0f18, 0.05);
 
-          <a-entity id="btn-tutorial" class="raycastable" position="0.75 -0.05 0.03" geometry="primitive: plane; width: 0.7; height: 0.28" material="color: #1e40af; shader: flat" data-clickable>
-             <a-entity text="value: TUTORIAL; color: #ffffff; align: center; width: 3.4" position="0 0 0.01"></a-entity>
-          </a-entity>
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 5);
 
-          <a-plane width="2.3" height="0.25" color="#020208" position="0 -0.52 0.02" material="opacity: 0.6; transparent: true">
-            <a-entity id="menu-status-text" text="value: JUJUTSU TECH CONFIG LOADED // SYSTEM READY; color: #00ffcc; align: center; width: 2.5" position="0 0 0.01"></a-entity>
-          </a-plane>
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
 
-        </a-plane>
-      </a-entity>
+    // 2. Luces Neón estilo TikTok
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
 
-      <a-entity id="tutorial-screen" position="0 1.4 -2.1" visible="false">
-        <a-plane width="2.4" height="1.5" color="#02010a" material="opacity: 0.98; transparent: true">
-          <a-entity text="value: MANUAL DE OPERACIONES DE MANNEQUIN; color: #00ffcc; align: center; width: 4.5;" position="0 0.6 0.02"></a-entity>
-          
-          <a-entity text="value: 1. ARMA DE AGUA (MANO DER): Recoge las armas cian del suelo usando Grip. Dispara chorros continuos con el Gatillo (Trigger).\n\n2. TÉCNICA AZUL: Pulsa X en tu mano izquierda para lanzar un orbe gravitatorio instantáneo.\n\n3. INVERSIÓN ROJA: Deja presionado el botón Y. Verás espirales de aire rojo concentrándose hasta volverse una canica blanca hiper-brillante. ¡Suelta Y para dispararla!\n\n4. VACÍO PURPÚREO: Dispara un Azul, y de inmediato lánzale un Rojo cargado. Si chocan en el aire, se fusionarán detonando un Púrpura masivo.\n\n5. AMENAZA SIGILOSA: Los maniquíes oscuros te cazan por la espalda. Si dejas de verlos, avanzarán velozmente. ¡Mantén la vista sobre ellos para congelarlos!.; color: #ffffff; width: 2.1; wrapCount: 40;" position="0 -0.05 0.02"></a-entity>
-          
-          <a-box id="btn-close-tut" class="raycastable" position="0 -0.62 0.03" scale="0.45 0.16 0.03" color="#ff0055" data-clickable>
-            <a-entity text="value: ENTENDIDO; color: #ffffff; align: center; width: 2.8;" position="0 0 0.02"></a-entity>
-          </a-box>
-        </a-plane>
-      </a-entity>
+    const lightCyan = new THREE.PointLight(0x00ffcc, 2, 10);
+    lightCyan.position.set(-2, 3, 2);
+    scene.add(lightCyan);
 
-      <a-entity id="ingame-hud" position="0 2.5 -3.2" visible="false">
-        <a-box id="exit-to-menu-btn" class="raycastable" scale="0.5 0.18 0.04" color="#1c1917" data-clickable>
-          <a-entity text="value: REGRESAR; color: #ff0055; align: center; width: 3" position="0 0 0.02"></a-entity>
-        </a-box>
-        <a-entity id="hud-energy-text" text="value: ENERGIA MALDITA: 100%; color: #00ffcc; width: 3.2;" position="-1.4 -0.3 0"></a-entity>
-        <a-entity id="hud-mana-text" text="value: MANA / HECHIZOS: 100%; color: #ff00aa; width: 3.2;" position="0.5 -0.3 0"></a-entity>
-      </a-entity>
+    const lightMagenta = new THREE.PointLight(0xff007f, 2, 10);
+    lightMagenta.position.set(2, 3, 2);
+    scene.add(lightMagenta);
 
-      <a-entity id="game-world" visible="false">
-        <a-grid color="#1e1b4b" width="60" height="60" opacity="0.45"></a-grid>
-        <a-box position="0 3.5 -16" scale="26 7 0.5" color="#0b081f"></a-box>
-        <a-box position="-13 3.5 -5" scale="0.5 7 22" color="#0b081f"></a-box>
-        <a-box position="13 3.5 -5" scale="0.5 7 22" color="#0b081f"></a-box>
+    // 3. Suelo Grid Cyberpunk
+    const grid = new THREE.GridHelper(20, 20, 0x00ffcc, 0xff007f);
+    grid.position.y = -1;
+    scene.add(grid);
 
-        <a-entity id="ground-weapons-container"></a-entity>
-        <a-entity id="enemy-container"></a-entity>
-      </a-entity>
+    // 4. Construcción del Personaje 3D (Jerarquía de Huesos/Meshes)
+    const furryAvatar = new THREE.Group();
 
-      <a-entity id="rig" movement-controls="controls: gamepad; speed: 0.23">
-        <a-entity camera position="0 1.6 0" look-controls></a-entity>
+    // Material estilizado
+    const furryMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3b82f6,
+      roughness: 0.4,
+      metalness: 0.1
+    });
 
-        <a-entity id="left-hand" oculus-touch-controls="hand: left" gojo-left-skills wizard-wand-system>
-          <a-entity id="left-controller-mesh" oculus-render-model="hand: left"></a-entity>
-          <a-entity id="left-hand-mesh" visible="false">
-            <a-sphere radius="0.03" color="#ff0055" material="opacity: 0.5; transparent: true"></a-sphere>
-          </a-entity>
-          
-          <a-entity id="wizard-wand-visual" position="0 0.02 -0.06" rotation="20 0 0" visible="false">
-            <a-cone radius-bottom="0.01" radius-top="0.002" height="0.3" color="#3b2314">
-              <a-sphere position="0 0.15 0" radius="0.018" color="#ff00aa"></a-sphere>
-            </a-cone>
-          </a-entity>
-        </a-entity>
+    const chestMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      roughness: 0.6
+    });
 
-        <a-entity id="right-hand" oculus-touch-controls="hand: right" vr-weapon-handler
-                  raycaster="objects: .raycastable; showLine: true; far: 12; interval: 25;"
-                  line="color: #00ffcc; opacity: 0.85; width: 4">
-          
-          <a-entity id="right-controller-mesh" oculus-render-model="hand: right"></a-entity>
-          <a-entity id="right-hand-mesh" visible="false">
-            <a-sphere radius="0.03" color="#00ffcc" material="opacity: 0.5; transparent: true"></a-sphere>
-          </a-entity>
+    // Torso / Cuerpo
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.3, 1.2, 16), furryMaterial);
+    torso.position.y = 0.6;
+    furryAvatar.add(torso);
 
-          <a-entity id="gojo-infinity-shield" position="0 0 0" visible="false">
-            <a-sphere radius="0.08" color="#00aaff" material="wireframe: true; opacity: 0.25"></a-sphere>
-          </a-entity>
+    // Pecho
+    const chest = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), chestMaterial);
+    chest.position.set(0, 0.7, 0.2);
+    chest.scale.set(1, 1, 0.6);
+    furryAvatar.add(chest);
 
-          <a-entity id="player-weapon-visual" position="0 0.05 -0.06" rotation="0 180 0" visible="false">
-            <a-cylinder radius="0.018" height="0.15" rotation="90 0 0" color="#e2e8f0"></a-cylinder>
-            <a-box id="weapon-water-grip" position="0 -0.06 0" scale="0.022 0.08 0.025" color="#06b6d4"></a-box>
-            <a-box id="weapon-water-tank" position="0 0.03 0.04" scale="0.035 0.045 0.09" color="#00ddff" material="opacity: 0.7; transparent: true"></a-box>
-          </a-entity>
-        </a-entity>
+    // Cabeza
+    const headGroup = new THREE.Group();
+    headGroup.position.y = 1.4;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), furryMaterial);
+    headGroup.add(head);
 
-      </a-entity>
-    </a-scene>
+    // Hocico
+    const snout = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), chestMaterial);
+    snout.rotation.x = Math.PI / 2;
+    snout.position.set(0, -0.05, 0.35);
+    headGroup.add(snout);
 
-  </body>
+    // Oreja Izquierda
+    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 16), furryMaterial);
+    earL.position.set(-0.25, 0.4, 0);
+    earL.rotation.z = 0.2;
+    headGroup.add(earL);
+
+    // Oreja Derecha
+    const earR = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 16), furryMaterial);
+    earR.position.set(0.25, 0.4, 0);
+    earR.rotation.z = -0.2;
+    headGroup.add(earR);
+
+    furryAvatar.add(headGroup);
+
+    // Cola Articulada (Física por código)
+    const tailGroup = new THREE.Group();
+    tailGroup.position.set(0, 0.1, -0.3);
+
+    const tailPart1 = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 12), furryMaterial);
+    tailPart1.scale.set(0.8, 1.5, 0.8);
+    tailGroup.add(tailPart1);
+
+    const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 12), chestMaterial);
+    tailTip.position.set(0, -0.4, 0);
+    tailTip.rotation.x = Math.PI;
+    tailGroup.add(tailTip);
+
+    furryAvatar.add(tailGroup);
+    scene.add(furryAvatar);
+
+    // 5. Loop de Animación Procedural (Bailando en tiempo real)
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = clock.getElapsedTime();
+
+      // Movimiento vertical (Rebote/Bounce TikTok)
+      furryAvatar.position.y = Math.abs(Math.sin(time * 5)) * 0.3;
+
+      // Rotación suave del cuerpo (Baile)
+      furryAvatar.rotation.y = Math.sin(time * 2.5) * 0.4;
+
+      // Movimiento de la cabeza respondiendo al ritmo
+      headGroup.rotation.x = Math.sin(time * 5) * 0.15;
+      headGroup.rotation.z = Math.cos(time * 2.5) * 0.1;
+
+      // Física procedural de la cola (Movimiento de látigo)
+      tailGroup.rotation.x = -Math.PI / 4 + Math.sin(time * 5) * 0.3;
+      tailGroup.rotation.y = Math.cos(time * 2.5) * 0.5;
+
+      // Animación ligera de las orejas
+      earL.rotation.z = 0.2 + Math.sin(time * 10) * 0.05;
+      earR.rotation.z = -0.2 - Math.sin(time * 10) * 0.05;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Redimensionar si cambia la pantalla
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
 </html>
